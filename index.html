@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Animal Grill</title>
+
+<!-- Home Screen web app support (iOS "Add to Home Screen" + standard PWA manifest) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f6a9be">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Animal Grill">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+/* ============================================================
+   SECTION 1 — STYLES (soft pastel, playful, rounded)
+   ============================================================ */
+:root{
+  --ink:#5d4a46;
+  --ink-soft:#8a7570;
+  --blush:#f6a9be;
+  --blush-deep:#e98ba6;
+  --cream:#fff8ef;
+  --butter:#ffe39b;
+  --butter-deep:#f5cc6d;
+  --mint:#a8e0c6;
+  --mint-deep:#87ceb0;
+  --lav:#cdb9ea;
+  --sky:#a9d8f0;
+  --peach:#ffcba4;
+  --shadow:0 4px 0 rgba(93,74,70,.22);
+  --font:"Baloo 2","Comic Sans MS","Chalkboard SE","Trebuchet MS",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0;
+  font-family:var(--font);
+  background:
+    radial-gradient(circle at 18% 0%,  #ffd9e4 0%, transparent 52%),
+    radial-gradient(circle at 84% 8%,  #d8f0e4 0%, transparent 48%),
+    radial-gradient(circle at 50% 100%,#e6dcf5 0%, transparent 55%),
+    #fbd9e3;
+  color:var(--ink);
+  overflow:hidden;
+  overscroll-behavior:none;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+/* 100vh first as a fallback: dvh is iOS 15.4+, and without it older Safari
+   drops the declaration entirely and the play area collapses to nothing. */
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+
+/* ---------- Header ---------- */
+#hud{
+  flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  padding:8px 10px;
+  background:linear-gradient(#fffdfa,#ffeef4);
+  border-bottom:5px solid var(--ink);
+  box-shadow:0 4px 14px rgba(93,74,70,.18);
+  z-index:5;
+}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:18px;line-height:1;max-width:36vw;}
+.brand .logo{width:30px;height:30px;border-radius:50%;background:var(--butter);
+  border:3px solid var(--ink);display:grid;place-items:center;font-size:15px;flex:0 0 auto;}
+.brand .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--blush-deep);}
+.pill{display:flex;align-items:center;gap:6px;background:var(--cream);border:3px solid var(--ink);
+  border-radius:999px;padding:5px 12px;font-weight:800;font-size:15px;box-shadow:var(--shadow);white-space:nowrap;}
+.pill.money{background:var(--butter);}
+.spacer{flex:1 1 auto;}
+.btn{font-family:var(--font);font-weight:800;font-size:15px;border:3px solid var(--ink);
+  border-radius:14px;padding:9px 14px;background:var(--cream);color:var(--ink);
+  box-shadow:var(--shadow);cursor:pointer;min-height:44px;transition:transform .06s ease;}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(93,74,70,.22);}
+.btn:focus-visible{outline:3px solid var(--sky);outline-offset:2px;}
+.btn.pink{background:var(--blush);}
+.btn.butter{background:var(--butter);}
+.btn.mint{background:var(--mint);}
+.btn.lav{background:var(--lav);}
+.btn.small{font-size:13px;padding:7px 11px;min-height:38px;border-radius:11px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn.ghost{background:#f3ece8;}
+
+@media (max-width:820px){
+  #hud{gap:6px;padding:6px 7px;}
+  .brand{font-size:15px;gap:6px;max-width:32vw;}
+  .brand .logo{width:24px;height:24px;font-size:12px;border-width:2px;}
+  .pill{font-size:12.5px;padding:4px 9px;border-width:2px;gap:4px;}
+  .btn.small{font-size:12px;padding:6px 9px;min-height:36px;border-width:2px;border-radius:10px;}
+}
+@media (max-width:400px){ .pill.clock .lbl{display:none;} .brand .nm{display:none;} }
+
+/* ---------- Stage ---------- */
+#stage{flex:1 1 auto;position:relative;display:grid;place-items:center;padding:8px;min-height:0;}
+#board{
+  position:relative;width:100%;max-width:1100px;aspect-ratio:900/640;
+  border-radius:22px;overflow:hidden;border:6px solid var(--ink);
+  box-shadow:0 10px 0 rgba(93,74,70,.2), 0 18px 40px rgba(93,74,70,.28);
+  background:var(--cream);
+}
+canvas{display:block;width:100%;height:100%;}
+#tipbar{
+  position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
+  background:rgba(93,74,70,.9);color:#fff;padding:8px 14px;border-radius:999px;
+  font-size:13px;font-weight:700;pointer-events:none;opacity:0;transition:opacity .3s;
+  white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;
+}
+#tipbar.show{opacity:1;}
+
+/* ---------- Modals ---------- */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(93,74,70,.5);
+  backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:14px;}
+.overlay.show{display:flex;}
+.card{background:var(--cream);border:6px solid var(--ink);border-radius:26px;
+  box-shadow:0 12px 0 rgba(93,74,70,.25);width:min(560px,100%);max-height:88vh;max-height:88dvh;
+  overflow:auto;-webkit-overflow-scrolling:touch;}
+.card h2{margin:0;padding:16px 18px;background:var(--blush);color:var(--ink);font-size:22px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  position:sticky;top:0;z-index:2;border-bottom:5px solid var(--ink);}
+.card .body{padding:16px 18px 20px;}
+.card h3{margin:18px 0 8px;font-size:17px;}
+.card h3:first-child{margin-top:0;}
+.muted{color:var(--ink-soft);font-size:13px;font-weight:600;line-height:1.5;}
+.close-x{background:var(--cream);color:var(--ink);border:3px solid var(--ink);width:38px;height:38px;
+  border-radius:50%;font-size:18px;font-weight:900;cursor:pointer;font-family:var(--font);flex:0 0 auto;line-height:1;}
+input[type=text]{font-family:var(--font);font-size:17px;font-weight:700;border:3px solid var(--ink);
+  border-radius:14px;padding:12px 14px;width:100%;background:#fff;color:var(--ink);min-height:48px;}
+input[type=range]{width:100%;height:38px;accent-color:var(--blush-deep);}
+
+.price-row{border:3px solid var(--ink);border-radius:18px;padding:12px;margin-bottom:12px;background:#fff;}
+.price-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.price-head .ico{width:44px;height:44px;flex:0 0 auto;}
+.price-head .nm{font-weight:800;font-size:17px;flex:1;}
+.stepper{display:flex;align-items:center;gap:8px;}
+.stepper .val{min-width:86px;text-align:center;font-weight:900;font-size:19px;font-variant-numeric:tabular-nums;
+  background:var(--butter);border:3px solid var(--ink);border-radius:12px;padding:6px 4px;}
+.round{width:46px;height:46px;border-radius:50%;border:3px solid var(--ink);background:#fff;
+  font-size:22px;font-weight:900;font-family:var(--font);cursor:pointer;flex:0 0 auto;box-shadow:var(--shadow);line-height:1;}
+.round:active{transform:translateY(3px);box-shadow:none;}
+.demand{margin-top:10px;}
+.demand .bar{height:14px;border:3px solid var(--ink);border-radius:999px;background:#efe6e2;overflow:hidden;}
+.demand .fill{height:100%;background:var(--blush-deep);transition:width .2s;}
+.tag{display:inline-block;margin-top:7px;padding:3px 12px;border-radius:999px;border:3px solid var(--ink);
+  font-size:13px;font-weight:800;}
+.tag.pop{background:var(--mint);}
+.tag.fair{background:var(--butter);}
+.tag.pricey{background:var(--blush);}
+
+.shop-item{display:flex;align-items:center;gap:12px;border:3px solid var(--ink);border-radius:18px;
+  padding:10px 12px;margin-bottom:10px;background:#fff;}
+.shop-item .ico{width:52px;height:52px;flex:0 0 auto;}
+.shop-item .info{flex:1;min-width:0;}
+.shop-item .info .t{font-weight:800;font-size:16px;}
+.shop-item .info .d{font-size:12.5px;color:var(--ink-soft);font-weight:600;line-height:1.35;}
+.owned{background:var(--ink);color:#fff;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:800;margin-left:6px;}
+
+.staff-item{display:flex;align-items:center;gap:10px;border:3px solid var(--ink);border-radius:16px;
+  padding:8px 10px;margin-bottom:8px;background:#fff;}
+.staff-item .av{width:46px;height:46px;flex:0 0 auto;}
+.staff-item .info{flex:1;min-width:0;}
+.staff-item .nm{font-weight:800;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.staff-item .st{font-size:12.5px;color:var(--ink-soft);font-weight:700;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px;}
+.chip{border:3px solid var(--ink);border-radius:14px;background:#fff;padding:9px 12px;
+  font-family:var(--font);font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:7px;min-height:44px;}
+.chip.sel{background:var(--butter);}
+.chip:disabled{opacity:.4;}
+
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 4px;}
+.sum-cell{border:3px solid var(--ink);border-radius:16px;padding:10px;background:#fff;text-align:center;}
+.sum-cell .k{font-size:12.5px;color:var(--ink-soft);font-weight:700;}
+.sum-cell .v{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;}
+.sum-cell.big{grid-column:1/-1;background:var(--butter);}
+.sold-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-weight:700;}
+.sold-row .ico{width:32px;height:32px;flex:0 0 auto;}
+.sold-row .n{margin-left:auto;font-weight:900;font-size:17px;font-variant-numeric:tabular-nums;}
+
+.footer-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+.footer-actions .btn{flex:1;min-width:130px;}
+.keycap{display:inline-block;border:3px solid var(--ink);border-radius:8px;background:#fff;
+  padding:1px 8px;font-weight:900;font-size:13px;box-shadow:0 2px 0 rgba(93,74,70,.22);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="hud">
+    <div class="brand"><span class="logo">🐱</span><span class="nm" id="hudName">Animal Grill</span></div>
+    <div class="pill money">🪙 <span id="hudMoney">0</span></div>
+    <div class="pill clock">🕐 <span class="lbl">Day </span><span id="hudDay">1</span> · <span id="hudClock">10:00</span></div>
+    <div class="spacer"></div>
+    <button class="btn butter small" id="btnPrices">💲 Prices</button>
+    <button class="btn mint small" id="btnShop">🛒 Shop</button>
+    <button class="btn lav small" id="btnStaff">👥 Staff</button>
+    <button class="btn ghost small" id="btnMusic" aria-label="Toggle music">🔊</button>
+    <button class="btn ghost small" id="btnSettings" aria-label="Settings">⚙️</button>
+    <button class="btn ghost small" id="btnInfo">❔</button>
+  </div>
+
+  <div id="stage">
+    <div id="board">
+      <canvas id="cv"></canvas>
+      <div id="tipbar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- New game -->
+<div class="overlay" id="ovNew">
+  <div class="card">
+    <h2>Animal Grill <span>🍔</span></h2>
+    <div class="body">
+      <p class="muted">You're the chef cat! Walk around your grill, cook burgers, fries and soda, and serve every hungry animal that comes through the door. What's your restaurant called?</p>
+      <input type="text" id="inpName" maxlength="24" placeholder="Animal Grill" />
+      <div class="chips" id="nameSuggest"></div>
+      <div class="footer-actions">
+        <button class="btn mint" id="btnStartGame">Open for business! 🎉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Prices -->
+<div class="overlay" id="ovPrices">
+  <div class="card">
+    <h2>Menu &amp; Prices <button class="close-x" data-close>✕</button></h2>
+    <div class="body">
+      <p class="muted">Cheaper food is more popular — more animals will order it. Pricey food earns more per sale but fewer customers want it. Each item works on its own!</p>
+      <div id="priceList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Shop -->
+<div class="overlay" id="ovShop">
+  <div class="card">
+    <h2>Shop <button class="close-x" data-close>✕</button></h2>
+    <div class="body">
+      <div class="pill money" style="margin-bottom:12px;">🪙 <span id="shopMoney">0</span> Cat Dollars</div>
+      <div id="shopList"></div>
+      <p class="muted">Prices never go up — a 5th grill costs the same as your 1st. New equipment is arranged on the floor automatically.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Staff -->
+<div class="overlay" id="ovStaff">
+  <div class="card">
+    <h2>Staff <button class="close-x" data-close>✕</button></h2>
+    <div class="body">
+      <div class="pill money" style="margin-bottom:12px;">🪙 <span id="staffMoney">0</span> Cat Dollars</div>
+      <h3>Your crew</h3>
+      <div id="staffList"></div>
+      <h3>Hire a helper — <span id="hireCost">C$120</span></h3>
+      <p class="muted">Helpers are paid once, forever. A <b>cook</b> runs one machine by themselves. A <b>waiter</b> walks food from the counter out to tables and the drive-thru — hire as many as you like!</p>
+      <input type="text" id="inpEmpName" maxlength="14" placeholder="Employee name" />
+      <div class="chips" id="stationPick"></div>
+      <button class="btn mint" id="btnHire" style="width:100%;">Hire 🐾</button>
+      <p class="muted" id="hireNote" style="margin-top:8px;"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Employee profile -->
+<div class="overlay" id="ovProfile">
+  <div class="card">
+    <h2 id="profTitle">Employee <button class="close-x" data-close>✕</button></h2>
+    <div class="body">
+      <div class="row" style="gap:14px;align-items:flex-start;">
+        <div id="profPic" style="flex:0 0 auto;"></div>
+        <div style="flex:1;min-width:0;">
+          <div id="profRole" style="font-weight:800;font-size:16px;"></div>
+          <div class="muted" id="profStar" style="margin-top:4px;"></div>
+          <div style="margin-top:8px;font-weight:800;font-size:15px;" id="profAwards"></div>
+        </div>
+      </div>
+      <h3>Name</h3>
+      <input type="text" id="profName" maxlength="14" />
+      <h3>Girl or boy</h3>
+      <div class="chips" id="profGender"></div>
+      <h3>Job</h3>
+      <div class="chips" id="profJobs"></div>
+      <p class="muted" id="profNote"></p>
+      <div class="footer-actions">
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn mint" id="btnProfSave">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Employee of the Month -->
+<div class="overlay" id="ovAward">
+  <div class="card">
+    <h2>Employee of the Month! <span>🏆</span></h2>
+    <div class="body">
+      <p class="muted" id="awardBlurb"></p>
+      <div id="awardList"></div>
+      <p class="muted">Your winner works faster at their job for the next 30 days, and gets a gold crown to wear.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Day summary -->
+<div class="overlay" id="ovSummary">
+  <div class="card">
+    <h2 id="sumTitle">Day 1 complete! <span>🌙</span></h2>
+    <div class="body">
+      <div class="sum-grid">
+        <div class="sum-cell"><div class="k">Revenue today</div><div class="v" id="sRev">C$0</div></div>
+        <div class="sum-cell"><div class="k">Customers served</div><div class="v" id="sCust">0</div></div>
+        <div class="sum-cell"><div class="k">Cars served</div><div class="v" id="sCars">0</div></div>
+        <div class="sum-cell"><div class="k">Left hungry</div><div class="v" id="sLost">0</div></div>
+        <div class="sum-cell"><div class="k">Lifetime earnings</div><div class="v" id="sLife">C$0</div></div>
+        <div class="sum-cell"><div class="k">Day</div><div class="v" id="sDay">1</div></div>
+        <div class="sum-cell big"><div class="k">Cat Dollars in the register</div><div class="v" id="sBal">C$0</div></div>
+      </div>
+      <h3>Items sold</h3>
+      <div id="sSold"></div>
+      <div class="footer-actions">
+        <button class="btn butter" id="btnSumPrices">💲 Prices</button>
+        <button class="btn lav" id="btnSumShop">🛒 Shop</button>
+        <button class="btn mint" id="btnNextDay">Start next day ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="card">
+    <h2>Settings <button class="close-x" data-close>✕</button></h2>
+    <div class="body">
+      <h3>Opening hours</h3>
+      <p class="muted">Staying open longer means more animals come in and you earn more — but each day takes longer to play.</p>
+      <div class="price-row">
+        <div class="price-head"><span class="nm">🌅 Opens at</span></div>
+        <div class="stepper">
+          <button class="round" id="openDown" aria-label="Open earlier">−</button>
+          <div class="val" id="openVal">10:00am</div>
+          <button class="round" id="openUp" aria-label="Open later">+</button>
+        </div>
+      </div>
+      <div class="price-row">
+        <div class="price-head"><span class="nm">🌙 Closes at</span></div>
+        <div class="stepper">
+          <button class="round" id="closeDown" aria-label="Close earlier">−</button>
+          <div class="val" id="closeVal">8:00pm</div>
+          <button class="round" id="closeUp" aria-label="Close later">+</button>
+        </div>
+      </div>
+      <div class="sum-cell big" style="margin-top:4px;">
+        <div class="k">Each day lasts</div><div class="v" id="hoursSummary">10 hours</div>
+      </div>
+      <h3>Music</h3>
+      <div class="chips" id="musicChips"></div>
+      <h3>Start over</h3>
+      <div class="footer-actions">
+        <button class="btn ghost" id="btnReset">🗑 Reset game</button>
+        <button class="btn pink" data-close>Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Info -->
+<div class="overlay" id="ovInfo">
+  <div class="card">
+    <h2>How to play <button class="close-x" data-close>✕</button></h2>
+    <div class="body">
+      <h3>Move your chef cat</h3>
+      <p class="muted">Press the <span class="keycap">←</span> <span class="keycap">↑</span> <span class="keycap">↓</span> <span class="keycap">→</span> arrow keys (or <span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span>). On a tablet or phone, just <b>touch and drag</b> anywhere on the floor and your cat walks toward your finger.</p>
+      <h3>Cook the food</h3>
+      <p class="muted">When an animal orders, the order lines up at the <b>grill</b> (burgers), <b>fryer</b> (fries) or <b>soda machine</b> (soda). A machine with a bouncing <b>!</b> is waiting — walk your cat up to it and it starts cooking all by itself.</p>
+      <h3>Serve the food</h3>
+      <p class="muted">Cooked food appears on the <b>counter</b>. Walk past to scoop it up (you can carry 3), then walk up to a hungry animal and they'll take it. Walk to the <b>drive-thru window</b> to hand food to a car.</p>
+      <h3>Get some help</h3>
+      <p class="muted">A <b>cook</b> runs one machine so you don't have to — there's a cook for the grill, the fryer, the soda machine and the milkshake machine. A <b>waiter</b> carries food out to the tables, and <b>drive-thru staff</b> only serve cars so your waiters can stay on the tables. Tap any of your crew in the Staff screen to see their profile, rename them, or move them to a different job.</p>
+      <h3>Milkshakes 🥤</h3>
+      <p class="muted">Buy a <b>Milkshake Machine</b> in the Shop to add Milkshakes to your menu. They take the longest to make but sell for the most.</p>
+      <h3>Employee of the Month 🏆</h3>
+      <p class="muted">Every 30 days you get to crown one member of your crew Employee of the Month. They wear a gold crown and work noticeably faster for the next 30 days. Their trophy count is kept forever on their profile.</p>
+      <h3>Settings ⚙️</h3>
+      <p class="muted">Tap <b>⚙️</b> to choose the hours your restaurant is open. Staying open longer brings in more animals and more Cat Dollars, but each day takes longer to play. Music and Reset Game live there too.</p>
+      <h3>Grow the place</h3>
+      <p class="muted">More <b>tables</b> = more animals at once. More machines = more food cooking at once. A <b>drive-thru</b> brings in cars all day long — extra money that doesn't need a table.</p>
+      <div class="footer-actions">
+        <button class="btn pink" data-close>Got it!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reset confirm -->
+<div class="overlay" id="ovReset">
+  <div class="card">
+    <h2>Reset everything? <span>🗑</span></h2>
+    <div class="body">
+      <p class="muted">This erases your restaurant name, your Cat Dollars, all your equipment and your whole crew. You'll start over on Day 1. This can't be undone!</p>
+      <div class="footer-actions">
+        <button class="btn ghost" id="btnResetNo">Never mind</button>
+        <button class="btn pink" id="btnResetYes">Yes, erase it all</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   SECTION 2 — CONSTANTS & HELPERS
+   ============================================================ */
+const SAVE_KEY = "animalgrill.save.v2";
+const OLD_KEY  = "catburger.save.v1";
+let W = 900, H = 640;                    // virtual world size (re-picked on resize)
+// Opening hours are a player setting. A longer working day means more real
+// seconds of play, so more customers — 15 real seconds per in-game hour.
+const SEC_PER_HOUR = 15;
+const DEF_OPEN = 10, DEF_CLOSE = 20;
+const OPEN_MIN = 5, OPEN_MAX = 13;
+const CLOSE_MIN = 13, CLOSE_MAX = 24;
+const MIN_HOURS = 4, MAX_HOURS = 16;
+const openHour  = ()=> game.openHour;
+const closeHour = ()=> game.closeHour;
+const dayHours  = ()=> closeHour()-openHour();
+const dayLength = ()=> dayHours()*SEC_PER_HOUR;
+function hourLabel(h){
+  const hh=((h+11)%12)+1, ap=(h%24)>=12&&h<24?"pm":"am";
+  return h===24 ? "12:00am" : hh+":00"+ap;
+}
+
+/* pastel palette used by the canvas */
+const INK="#5d4a46", INK2="#8a7570";
+const CREAM="#fff8ef", BLUSH="#f6a9be", BLUSH_D="#e98ba6", BUTTER="#ffe39b",
+      BUTTER_D="#f5cc6d", MINT="#a8e0c6", MINT_D="#87ceb0", LAV="#cdb9ea",
+      SKY="#a9d8f0", PEACH="#ffcba4", GROUT="#f4e7e1", ASPHALT="#ddd6e6";
+
+const ITEMS = {
+  burger: { name:"Cheeseburger", def:6.00, min:2.00, max:15.00, step:0.25, cook:5.0, station:"grill" },
+  fries:  { name:"Fries",        def:3.00, min:1.00, max:10.00, step:0.25, cook:4.0, station:"fryer" },
+  soda:   { name:"Soda",         def:2.00, min:1.00, max:8.00,  step:0.25, cook:2.2, station:"soda"  },
+  shake:  { name:"Milkshake",    def:5.00, min:2.00, max:12.00, step:0.25, cook:6.0, station:"shake" },
+};
+const ITEM_KEYS = ["burger","fries","soda","shake"];
+
+const ROLES = {
+  grill:     { name:"Grill Cook",   emoji:"🍔", kind:"station" },
+  fryer:     { name:"Fry Cook",     emoji:"🍟", kind:"station" },
+  soda:      { name:"Soda Jerk",    emoji:"🥤", kind:"station" },
+  shake:     { name:"Shake Maker",  emoji:"🥤", kind:"station" },
+  waiter:    { name:"Waiter",       emoji:"🍽", kind:"waiter"  },
+  drivethru: { name:"Drive-Thru",   emoji:"🚗", kind:"drive"   },
+};
+const EQUIP_PRICES = { table:40, grill:90, fryer:75, soda:60, shake:110, checkout:70, drivethru:220, employee:120 };
+const START_MONEY = 75;
+const MAX_WAITERS = 12;
+const MAX_DRIVE_STAFF = 3;
+const CARRY_CAP = 3;
+const AWARD_EVERY = 30;                 // days between Employee of the Month awards
+const STAR_COOK_SPEED = 1.75, STAR_WALK = 1.42;
+
+const SPECIES = ["cat","dog","bunny","hamster"];
+const GENDERS = ["girl","boy"];          // girls wear a bow on their head
+const FUR = ["#f7c08a","#e8a56b","#c98f6a","#f6e3c8","#ded7d0","#b9c6d4","#f8c3d2",
+             "#fff1de","#cbb08c","#e6dff3","#d6b9e8","#b6e0c8","#a9d8f0","#ffd0b0"];
+const NAMES = ["Mochi","Biscuit","Waffles","Pepper","Noodle","Pickle","Momo","Tofu","Cinnamon","Bandit",
+               "Muffin","Sprout","Clover","Pumpkin","Nugget","Ziggy","Olive","Peanut","Marshmallow",
+               "Butter","Cocoa","Sushi","Bagel","Pancake","Truffle","Pretzel","Dumpling","Jellybean"];
+const RESTO_NAMES = ["Animal Grill","Paws & Patties","The Purr Grill","Fluffy Burger Barn","Cozy Critter Cafe","Mittens Diner"];
+const CAR_COLORS = ["#f8c3d2","#b6e0c8","#a9d8f0","#ffd9a8","#d6b9e8","#ffe39b","#f7b0a8"];
+
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const money=n=>"C$"+(Math.round(n*100)/100).toFixed(2).replace(/\.00$/,"");
+const dist=(a,b,c,d)=>Math.hypot(a-c,b-d);
+let _uid=1; const uid=()=>_uid++;
+
+/* ============================================================
+   SECTION 3 — GAME STATE
+   ============================================================ */
+let game=null, rt=null, layout=null;
+
+function blankSold(){ const o={}; ITEM_KEYS.forEach(k=>o[k]=0); return o; }
+
+function freshGame(name){
+  const prices={}; ITEM_KEYS.forEach(k=>prices[k]=ITEMS[k].def);
+  return {
+    v:3,
+    name: name || "Animal Grill",
+    money: START_MONEY,
+    lifetime: 0,
+    day: 1,
+    prices,
+    equip:{ grill:1, fryer:1, soda:1, shake:0, table:1, checkout:1, drivethru:0 },
+    employees:[],                       // {id,name,species,color,role,awards}
+    eotm:null,                          // {id, untilDay} — Employee of the Month
+    awardDue:false,
+    openHour:DEF_OPEN, closeHour:DEF_CLOSE,
+    catColor:"#f7c08a",
+    stats:{ customers:0, cars:0, sold:blankSold() },
+  };
+}
+
+/** Is this employee the current Employee of the Month? */
+function isStar(emp){
+  return !!(emp && game.eotm && game.eotm.id===emp.id && game.day<=game.eotm.untilDay);
+}
+function starOf(){
+  if(!game.eotm) return null;
+  return game.employees.find(e=>e.id===game.eotm.id && game.day<=game.eotm.untilDay) || null;
+}
+
+function freshRuntime(){
+  return {
+    phase:"playing",
+    t: dayLength(),
+    tGlobal:0,
+    spawnTimer:1.2,
+    carTimer:4,
+    customers:[],
+    cars:[],
+    queues:{ grill:[], fryer:[], soda:[], shake:[] },
+    stations:[], checkouts:[], waiters:[],
+    ready:[],                            // cooked food on the counter: {id,item}
+    fx:[],
+    player:null,
+    nightT:0,
+    dayRevenue:0, dayCustomers:0, dayCars:0, dayLost:0,
+    daySold:blankSold(),
+  };
+}
+
+/* ============================================================
+   SECTION 4 — SAVE / LOAD
+   ============================================================ */
+function save(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(game)); }catch(e){}
+}
+function load(){
+  let raw=null;
+  try{ raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem(OLD_KEY); }catch(e){ return null; }
+  if(!raw) return null;
+  try{
+    const d = JSON.parse(raw);
+    if(!d || typeof d!=="object" || !d.equip) return null;
+    const g = freshGame(d.name);
+    g.money    = Number(d.money)||0;
+    g.lifetime = Number(d.lifetime)||0;
+    g.day      = Math.max(1, Number(d.day)||1);
+    g.catColor = typeof d.catColor==="string" ? d.catColor : "#f7c08a";
+    for(const k of ITEM_KEYS){
+      const p=Number(d.prices?.[k]);
+      g.prices[k] = isFinite(p) ? clamp(p, ITEMS[k].min, ITEMS[k].max) : ITEMS[k].def;
+    }
+    for(const k of Object.keys(g.equip)) g.equip[k]=clamp(Math.floor(Number(d.equip?.[k])||0),0,300);
+    g.equip.table = Math.max(1, g.equip.table);
+    g.equip.drivethru = clamp(g.equip.drivethru,0,1);
+    g.employees = Array.isArray(d.employees) ? d.employees.map(e=>{
+      if(!e) return null;
+      // v1 saves called waiters "checkout"
+      const role = e.role || (e.station==="checkout" ? "waiter" : e.station);
+      if(!ROLES[role]) return null;
+      const id = Number(e.id)>0 ? Number(e.id) : uid();
+      return { id, name:String(e.name||"Helper").slice(0,14),
+               species:SPECIES.includes(e.species)?e.species:pick(SPECIES),
+               color:e.color||pick(FUR), role,
+               gender: e.gender==="girl"||e.gender==="boy" ? e.gender : pick(GENDERS),
+               awards:Math.max(0, Math.floor(Number(e.awards)||0)) };
+    }).filter(Boolean) : [];
+    // keep the id counter clear of anything we just restored
+    g.employees.forEach(e=>{ if(e.id>=_uid) _uid=e.id+1; });
+
+    if(d.eotm && Number(d.eotm.id)>0 && g.employees.some(e=>e.id===Number(d.eotm.id))){
+      g.eotm = { id:Number(d.eotm.id), untilDay:Math.max(1,Number(d.eotm.untilDay)||1) };
+    }
+    g.awardDue = !!d.awardDue;
+
+    // opening hours, kept sane whatever the save says
+    let oh=Math.round(Number(d.openHour)), ch=Math.round(Number(d.closeHour));
+    if(!isFinite(oh)) oh=DEF_OPEN;
+    if(!isFinite(ch)) ch=DEF_CLOSE;
+    oh=clamp(oh,OPEN_MIN,OPEN_MAX);
+    ch=clamp(ch,CLOSE_MIN,CLOSE_MAX);
+    if(ch-oh<MIN_HOURS) ch=oh+MIN_HOURS;
+    if(ch-oh>MAX_HOURS) ch=oh+MAX_HOURS;
+    ch=clamp(ch,CLOSE_MIN,CLOSE_MAX);
+    if(ch-oh<MIN_HOURS) oh=ch-MIN_HOURS;
+    g.openHour=oh; g.closeHour=ch;
+
+    if(d.stats){
+      g.stats.customers=Number(d.stats.customers)||0;
+      g.stats.cars=Number(d.stats.cars)||0;
+      for(const k of ITEM_KEYS) g.stats.sold[k]=Number(d.stats.sold?.[k])||0;
+    }
+    return g;
+  }catch(e){ return null; }
+}
+
+/* ============================================================
+   SECTION 5 — LAYOUT (auto-arranged floor + drive-thru lane)
+   ============================================================ */
+function computeLayout(){
+  const e=game.equip;
+  const L={ stations:[], checkouts:[], tables:[] };
+
+  L.driveW   = e.drivethru ? 104 : 0;      // lane lives outside the right wall
+  L.interiorW= W - L.driveW;
+  const iw = L.interiorW, cx = iw/2;
+
+  // ---- kitchen machines along the top ----
+  const kinds=[];
+  for(let i=0;i<e.grill;i++) kinds.push("grill");
+  for(let i=0;i<e.fryer;i++) kinds.push("fryer");
+  for(let i=0;i<e.soda;i++)  kinds.push("soda");
+  for(let i=0;i<e.shake;i++) kinds.push("shake");
+  const slotW=96, perRow=Math.max(1,Math.floor((iw-36)/slotW));
+  const kRows=Math.max(1,Math.ceil(kinds.length/perRow));
+  const kTop=16, rowStep=84;
+  kinds.forEach((type,i)=>{
+    const r=Math.floor(i/perRow), c=i%perRow;
+    const inRow=Math.min(perRow, kinds.length-r*perRow);
+    const x0=cx-(inRow*slotW)/2+slotW/2;
+    L.stations.push({ id:"S"+i, type, x:x0+c*slotW, y:kTop+32+r*rowStep });
+  });
+  L.kitchenBottom = kTop + kRows*rowStep;
+
+  // ---- counters ----
+  const cW=116, cPerRow=Math.max(1,Math.floor((iw-30)/cW));
+  const cRows=Math.max(1,Math.ceil(e.checkout/cPerRow));
+  const cTop=L.kitchenBottom+6;
+  for(let i=0;i<e.checkout;i++){
+    const r=Math.floor(i/cPerRow), c=i%cPerRow;
+    const inRow=Math.min(cPerRow, e.checkout-r*cPerRow);
+    const x0=cx-(inRow*cW)/2+cW/2;
+    L.checkouts.push({ id:"C"+i, x:x0+c*cW, y:cTop+30+r*70 });
+  }
+  L.checkoutBottom = cTop + cRows*70;
+
+  // ---- tables ----
+  const areaTop=L.checkoutBottom+14, n=e.table, colW=124, rowH=108;
+  const cols=Math.max(1,Math.floor((iw-30)/colW)), rows=Math.ceil(n/cols);
+  L.worldH = Math.max(H, areaTop + rows*rowH + 74);
+  const availH=(L.worldH-74)-areaTop;
+  const gridTop=areaTop+Math.max(0,(availH-rows*rowH)/2);
+  for(let i=0;i<n;i++){
+    const r=Math.floor(i/cols), c=i%cols;
+    const inRow=Math.min(cols, n-r*cols);
+    const x0=cx-(inRow*colW)/2+colW/2;
+    L.tables.push({ id:"T"+i, x:x0+c*colW, y:gridTop+rowH/2+r*rowH, r:30, taken:null });
+  }
+
+  L.door = { x:cx, y:L.worldH-6 };
+
+  // ---- drive-thru ----
+  if(e.drivethru){
+    const wy = clamp(L.checkoutBottom+70, 160, L.worldH-220);
+    L.drive = {
+      windowX: iw-12, windowY: wy,               // the hatch in the wall
+      standX:  iw-46, standY: wy,                // where a server stands inside
+      laneX:   iw + L.driveW/2,
+      slots:   [0,1,2,3].map(i=>({ x:iw+L.driveW/2, y:wy + i*104 })),
+    };
+  } else L.drive = null;
+
+  // ---- waiter home spots (a tidy row under the counters) ----
+  L.waiterHomes=[];
+  const nw=Math.max(1, game.employees.filter(x=>x.role==="waiter").length);
+  for(let i=0;i<nw;i++){
+    const spread=Math.min(iw-80, nw*70);
+    const x0=cx-spread/2+spread/(nw*2);
+    L.waiterHomes.push({ x: nw===1?cx-70 : x0+i*(spread/nw), y:L.checkoutBottom+34 });
+  }
+  // drive-thru staff wait beside the hatch
+  L.driveHomes=[];
+  const nd=Math.max(1, game.employees.filter(x=>x.role==="drivethru").length);
+  for(let i=0;i<nd;i++){
+    L.driveHomes.push(L.drive ? { x:L.drive.standX-6-i*34, y:L.drive.standY+6 }
+                              : { x:cx, y:L.checkoutBottom+34 });
+  }
+
+  L.zoom = Math.min(1, H/L.worldH);
+  L.offX = (W - W*L.zoom)/2;
+  L.offY = (H - L.worldH*L.zoom)/2;
+  return L;
+}
+
+function syncStations(){
+  const old = rt.stations||[];
+  layout = computeLayout();
+  rt.stations = layout.stations.map(s=>{
+    const prev = old.find(o=>o.id===s.id && o.type===s.type);
+    return { id:s.id, type:s.type, x:s.x, y:s.y,
+             ticket:prev?prev.ticket:null, progress:prev?prev.progress:0, emp:null, bob:Math.random()*6 };
+  });
+  rt.checkouts = layout.checkouts.map(c=>({ id:c.id, x:c.x, y:c.y }));
+  assignEmployees();
+
+  if(!rt.player){
+    rt.player = { x:layout.door.x, y:layout.worldH-90, carry:[], bob:0, dir:1, act:0, moving:false };
+  }
+  rt.player.x = clamp(rt.player.x, 24, layout.interiorW-24);
+  rt.player.y = clamp(rt.player.y, 24, layout.worldH-24);
+
+  const tables = layout.tables;
+  rt.customers.forEach(c=>{
+    if(c.state==="leaving"){ c.tx=layout.door.x; c.ty=layout.worldH+50; return; }
+    if(c.tableIdx!=null && c.tableIdx>=tables.length) c.tableIdx=tables.length-1;
+    const t=tables[c.tableIdx];
+    if(t){
+      t.taken=c.id;
+      if(c.state==="sitting"||c.state==="eating"){ c.x=t.x; c.y=t.y+t.r+18; }
+      c.tx=t.x; c.ty=t.y+t.r+18;
+    }
+  });
+  if(!layout.drive) rt.cars.length=0;
+}
+
+function assignEmployees(){
+  rt.stations.forEach(s=>s.emp=null);
+  const byRole={}; Object.keys(ROLES).forEach(r=>byRole[r]=[]);
+  game.employees.forEach(e=>{ if(byRole[e.role]) byRole[e.role].push(e); });
+
+  for(const type of ["grill","fryer","soda","shake"]){
+    const sts=rt.stations.filter(s=>s.type===type);
+    byRole[type].forEach((emp,i)=>{ if(sts[i]) sts[i].emp=emp; });
+  }
+
+  // mobile staff (waiters + drive-thru) keep their walking state across rebuilds
+  const prev=rt.waiters||[];
+  const mobile=[];
+  byRole.waiter.forEach((emp,i)=>mobile.push({emp, role:"waiter",
+    home: layout.waiterHomes[i]||layout.waiterHomes[0]||{x:layout.interiorW/2,y:layout.checkoutBottom+34}}));
+  byRole.drivethru.forEach((emp,i)=>mobile.push({emp, role:"drivethru",
+    home: layout.driveHomes[i]||layout.driveHomes[0]||{x:layout.interiorW/2,y:layout.checkoutBottom+34}}));
+
+  rt.waiters = mobile.map(m=>{
+    const old=prev.find(w=>w.emp && w.emp.id===m.emp.id);
+    return old ? Object.assign(old,m) :
+      Object.assign({}, m, { x:m.home.x, y:m.home.y, carry:[], state:"idle",
+                             bob:Math.random()*6, act:0, dir:1, moving:false });
+  });
+}
+
+const stationCount=t=>game.equip[t];
+const roleCount=r=>game.employees.filter(e=>e.role===r).length;
+
+/* ============================================================
+   SECTION 6 — DEMAND
+   ============================================================ */
+function demandProb(item){
+  const c=ITEMS[item], p=game.prices[item];
+  const t=clamp((p-c.min)/(c.max-c.min),0,1);
+  return clamp(0.95*Math.pow(1-t,1.25)+0.05, 0.05, 1);
+}
+function demandLabel(item){
+  const d=demandProb(item);
+  if(d>=0.70) return {txt:"Popular!",   cls:"pop"};
+  if(d>=0.35) return {txt:"Fair price", cls:"fair"};
+  return {txt:"Pricey", cls:"pricey"};
+}
+/** An item is only on the menu if you own a machine that can make it. */
+function itemAvailable(k){ return (game.equip[ITEMS[k].station]||0) > 0; }
+function menuItems(){ return ITEM_KEYS.filter(itemAvailable); }
+
+function rollOrder(maxItems){
+  const menu=menuItems();
+  if(!menu.length) return [];
+  const order=[];
+  for(const k of menu) if(Math.random()<demandProb(k)) order.push(k);
+  if(!order.length){
+    const tot=menu.reduce((s,k)=>s+demandProb(k),0);
+    let r=Math.random()*tot;
+    for(const k of menu){ r-=demandProb(k); if(r<=0){ order.push(k); break; } }
+    if(!order.length) order.push(menu[0]);
+  }
+  if(maxItems && order.length>maxItems){
+    // keep a random subset rather than always dropping the same items
+    for(let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
+    order.length=maxItems;
+  }
+  return order;
+}
+
+/* ============================================================
+   SECTION 7 — SIMULATION
+   ============================================================ */
+function ease(t){ t=clamp(t,0,1); return t*t*(3-2*t); }
+function moveTo(o,tx,ty,step){
+  const dx=tx-o.x, dy=ty-o.y, d=Math.hypot(dx,dy);
+  o.moving = d>1.5;
+  if(d<=step){ o.x=tx; o.y=ty; return true; }
+  o.x+=dx/d*step; o.y+=dy/d*step;
+  if(Math.abs(dx)>2) o.dir = dx>0?1:-1;
+  return false;
+}
+function addFX(x,y,txt,color){ rt.fx.push({x,y,txt,color,t:1.4}); }
+
+/** every patron (seated animal or car at the window) that still wants `item` */
+function patronsNeeding(item){
+  const out=[];
+  rt.customers.forEach(c=>{ if(c.state==="sitting" && needs(c,item)) out.push(c); });
+  // Cars order from the lane and collect at the window, so their food can be
+  // cooking while they're still queued — otherwise one car blocks the whole lane.
+  if(layout.drive) rt.cars.forEach(c=>{
+    if(c.queued && c.slot>=0 && c.slot<=1 && c.state!=="off" && c.state!=="paying" && needs(c,item)) out.push(c);
+  });
+  return out;
+}
+/** Once you employ drive-thru staff, general waiters stop being dragged to the
+ *  window and stay on the tables — that separation is the point of the job. */
+function haveDriveStaff(){ return rt.waiters.some(w=>w.role==="drivethru"); }
+function needs(p,item){
+  const want=p.order.filter(o=>o===item).length;
+  const has =p.got.filter(o=>o===item).length;
+  return has<want;
+}
+function fullyServed(p){ return p.order.every(it=>!needs(p,it)); }
+
+function giveItem(p,item){
+  p.got.push(item);
+  p.emote=1.0;
+  p.patience=Math.min(p.patienceMax, p.patience+6);
+}
+
+const TOGO_PREMIUM = 1.25;   // drive-thru orders cost a little extra
+
+function payAndLeave(p, isCar){
+  let paid=0;
+  p.got.forEach(it=>{ paid+=game.prices[it]; game.stats.sold[it]++; rt.daySold[it]++; });
+  if(isCar) paid*=TOGO_PREMIUM;
+  game.money+=paid; game.lifetime+=paid; rt.dayRevenue+=paid;
+  if(isCar){ rt.dayCars++; game.stats.cars++; } else { rt.dayCustomers++; game.stats.customers++; }
+  addFX(p.x, p.y-34, "+"+money(paid), "#3f9b70");
+}
+
+function freeTable(){ return layout.tables.find(t=>!t.taken); }
+function spawnInterval(){ return clamp(7.0/(0.75+game.equip.table*0.55), 0.85, 8); }
+
+function spawnCustomer(){
+  const t=freeTable(); if(!t) return;
+  const c={ id:uid(), species:pick(SPECIES), color:pick(FUR),
+    x:layout.door.x+rand(-20,20), y:layout.worldH+30,
+    tx:t.x, ty:t.y+t.r+18, tableIdx:layout.tables.indexOf(t),
+    state:"walkin", order:rollOrder(), got:[], patience:46, patienceMax:46,
+    timer:0, bob:Math.random()*6, emote:0, dir:1, moving:true };
+  t.taken=c.id;
+  rt.customers.push(c);
+}
+
+function queueOrder(p){
+  p.order.forEach(item=>rt.queues[ITEMS[item].station].push({ id:uid(), item, patronId:p.id }));
+}
+function cancelOrder(p){
+  const remaining={};
+  p.order.forEach(it=>{ if(needs(p,it)) remaining[it]=(remaining[it]||0)+1; });
+  for(const k in rt.queues){
+    rt.queues[k]=rt.queues[k].filter(t=>{
+      if(t.patronId!==p.id) return true;
+      return false;
+    });
+  }
+  rt.stations.forEach(s=>{ if(s.ticket && s.ticket.patronId===p.id && !s.ticket.done){ s.ticket=null; s.progress=0; } });
+}
+
+/* ---------- cars ---------- */
+function carSlotFree(i){ return !rt.cars.some(c=>c.slot===i); }
+
+/** A car is a whole carload of hungry animals, so it orders a bit more than one
+ *  diner would — otherwise a trip to the window is never worth a waiter's time. */
+function carOrder(){
+  const menu=menuItems();
+  const order=rollOrder(3);
+  while(order.length<3 && menu.length && Math.random()<0.55) order.push(pick(menu));
+  return order;
+}
+function spawnCar(){
+  if(!layout.drive) return;
+  let slot=-1;
+  for(let i=0;i<layout.drive.slots.length;i++) if(carSlotFree(i)){ slot=i; break; }
+  if(slot<0) return;
+  const s=layout.drive.slots[slot];
+  rt.cars.push({ id:uid(), isCar:true, slot, species:pick(SPECIES), color:pick(FUR), paint:pick(CAR_COLORS),
+    x:s.x, y:layout.worldH+120, tx:s.x, ty:s.y,
+    state:"driving", order:carOrder(), got:[], patience:58, patienceMax:58,
+    timer:0, emote:0, bob:0, queued:false });
+}
+
+/* ---------- the player's chef cat ---------- */
+const keys=Object.create(null);
+const touch={ active:false, x:0, y:0 };
+
+function playerInput(){
+  let dx=0, dy=0;
+  if(keys.ArrowLeft||keys.KeyA) dx-=1;
+  if(keys.ArrowRight||keys.KeyD) dx+=1;
+  if(keys.ArrowUp||keys.KeyW) dy-=1;
+  if(keys.ArrowDown||keys.KeyS) dy+=1;
+  if(dx||dy){ const m=Math.hypot(dx,dy); return {dx:dx/m, dy:dy/m}; }
+  if(touch.active){
+    const p=rt.player, ddx=touch.x-p.x, ddy=touch.y-p.y, d=Math.hypot(ddx,ddy);
+    if(d>8) return {dx:ddx/d, dy:ddy/d};
+  }
+  return {dx:0, dy:0};
+}
+
+/** Shared "walk up and it just happens" logic for the player and for waiters. */
+function autoInteract(actor, opts){
+  if(actor.act>0) return;
+  const canCook = !!opts.canCook, carsOnly = !!opts.carsOnly, skipCars = !!opts.skipCars;
+  const quick = opts.star ? 0.6 : 1;
+
+  // 1) hand food to anyone standing/parked close enough
+  for(let i=0;i<actor.carry.length;i++){
+    const item=actor.carry[i];
+    if(!carsOnly){
+      for(const c of rt.customers){
+        if(c.state==="sitting" && needs(c,item) && dist(actor.x,actor.y,c.x,c.y)<54){
+          actor.carry.splice(i,1); giveItem(c,item); actor.act=0.2*quick; return;
+        }
+      }
+    }
+    if(layout.drive && !skipCars && dist(actor.x,actor.y,layout.drive.standX,layout.drive.standY)<64){
+      const car=rt.cars.find(c=>c.state==="ordering" && c.slot===0 && needs(c,item));
+      if(car){ actor.carry.splice(i,1); giveItem(car,item); actor.act=0.2*quick; return; }
+    }
+  }
+
+  // 2) scoop food off the counter (only what somebody actually wants)
+  if(actor.carry.length<CARRY_CAP){
+    for(const ck of rt.checkouts){
+      if(dist(actor.x,actor.y,ck.x,ck.y)>60) continue;
+      const idx=rt.ready.findIndex(r=>{
+        const wanted=patronsNeeding(r.item)
+          .filter(p=> carsOnly ? p.isCar : (skipCars ? !p.isCar : true)).length;
+        return wanted>countCarriedFor(r.item, carsOnly);
+      });
+      if(idx>=0){ actor.carry.push(rt.ready.splice(idx,1)[0].item); actor.act=0.18*quick; return; }
+    }
+  }
+
+  // 3) the player can fire up an unattended machine just by standing next to it
+  if(canCook){
+    for(const s of rt.stations){
+      if(s.ticket || s.emp) continue;
+      if(!rt.queues[s.type].length) continue;
+      if(dist(actor.x,actor.y,s.x,s.y)<58){
+        s.ticket=rt.queues[s.type].shift(); s.progress=0; s.byPlayer=true;
+        actor.act=0.25; addFX(s.x, s.y-42, "cooking!", INK2); return;
+      }
+    }
+  }
+}
+function countCarried(item){
+  let n=rt.player.carry.filter(i=>i===item).length;
+  rt.waiters.forEach(w=>{ n+=w.carry.filter(i=>i===item).length; });
+  return n;
+}
+/** Items already in hand *for the same pool of patrons* as the asker. Comparing a
+ *  cars-only need against the global carried count starves the drive-thru. */
+function countCarriedFor(item, carsOnly){
+  let n=rt.player.carry.filter(i=>i===item).length;      // the player serves everyone
+  rt.waiters.forEach(w=>{
+    if((w.role==="drivethru")===!!carsOnly) n+=w.carry.filter(i=>i===item).length;
+  });
+  return n;
+}
+
+/* ---------- waiters ---------- */
+function updateWaiter(w,dt){
+  w.act=Math.max(0,w.act-dt);
+  const speed=118*dt*(isStar(w.emp)?STAR_WALK:1);
+  const carsOnly = w.role==="drivethru";
+  const skipCars = !carsOnly && haveDriveStaff();
+
+  // A drive-thru worker only fetches what a car is waiting on; a waiter ignores
+  // cars entirely once someone is employed to work the window.
+  const eligible = item => patronsNeeding(item)
+        .filter(p => carsOnly ? p.isCar : (skipCars ? !p.isCar : true));
+  const wantsIt = item => eligible(item).length > countCarriedFor(item, carsOnly);
+
+  // Load a full tray before setting off — one trip per plate wastes most of the day.
+  const moreWanted = rt.ready.some(r=>wantsIt(r.item));
+  const loading = w.carry.length<CARRY_CAP && moreWanted && rt.checkouts.length;
+
+  if(loading){
+    let ck=rt.checkouts[0],bd=1e9;
+    rt.checkouts.forEach(c=>{ const d=dist(w.x,w.y,c.x,c.y); if(d<bd){bd=d;ck=c;} });
+    moveTo(w,ck.x,ck.y+34,speed);
+  } else if(w.carry.length){
+    // Serve the most impatient patron, not merely the closest — otherwise nearby
+    // tables always win and drive-thru cars sit until they give up.
+    let best=null,bs=1e9;
+    for(const item of w.carry){
+      for(const p of eligible(item)){
+        const px = p.isCar ? layout.drive.standX : p.x;
+        const py = p.isCar ? layout.drive.standY : p.y;
+        // Compare how far through their patience each patron is, not raw seconds —
+        // cars start with a longer fuse, so absolute time would always favour tables.
+        // Cars get a small edge on top because one car blocks the whole lane.
+        const urgency = (p.patience/p.patienceMax) * (p.isCar ? 0.72 : 1);
+        const score = urgency + dist(w.x,w.y,px,py)/1400;
+        if(score<bs){ bs=score; best={px,py}; }
+      }
+    }
+    if(best) moveTo(w,best.px,best.py,speed);
+    else moveTo(w,w.home.x,w.home.y,speed);            // nobody wants it any more
+  } else moveTo(w,w.home.x,w.home.y,speed);
+  if(w.moving) w.bob+=dt*9;
+  autoInteract(w,{canCook:false, carsOnly, skipCars, star:isStar(w.emp)});
+}
+
+/* ---------- main per-frame update ---------- */
+function updateDay(dt){
+  rt.t-=dt;
+  if(rt.t<=0){ rt.t=0; endDay(); return; }
+
+  // --- player ---
+  const p=rt.player;
+  p.act=Math.max(0,p.act-dt);
+  const inp=playerInput();
+  if(inp.dx||inp.dy){
+    const sp=172*dt;
+    p.x=clamp(p.x+inp.dx*sp, 22, layout.interiorW-22);
+    p.y=clamp(p.y+inp.dy*sp, 22, layout.worldH-22);
+    if(Math.abs(inp.dx)>0.1) p.dir=inp.dx>0?1:-1;
+    p.bob+=dt*10; p.moving=true;
+  } else p.moving=false;
+  autoInteract(p,{canCook:true});
+
+  // --- waiters ---
+  rt.waiters.forEach(w=>updateWaiter(w,dt));
+
+  // --- arrivals ---
+  rt.spawnTimer-=dt;
+  if(rt.spawnTimer<=0){
+    rt.spawnTimer=spawnInterval()*rand(0.75,1.3);
+    if(rt.t>8) spawnCustomer();
+  }
+  if(layout.drive){
+    rt.carTimer-=dt;
+    if(rt.carTimer<=0){ rt.carTimer=rand(3.6,6.4); if(rt.t>14) spawnCar(); }
+  }
+
+  // --- seated customers ---
+  for(let i=rt.customers.length-1;i>=0;i--){
+    const c=rt.customers[i];
+    if(c.emote>0) c.emote-=dt;
+    if(c.moving) c.bob+=dt*8;
+
+    if(c.state==="walkin"){
+      if(moveTo(c,c.tx,c.ty,102*dt)){ c.state="sitting"; c.timer=0; queueOrder(c); }
+    } else if(c.state==="sitting"){
+      c.patience-=dt;
+      if(fullyServed(c)){ c.state="eating"; c.timer=2.6; c.emote=1.2; }
+      else if(c.patience<=0){
+        cancelOrder(c);
+        const t=layout.tables[c.tableIdx]; if(t&&t.taken===c.id) t.taken=null;
+        c.state="leaving"; c.sad=true; c.tx=layout.door.x; c.ty=layout.worldH+50;
+        rt.dayLost++; addFX(c.x,c.y-30,"…",INK2);
+      }
+    } else if(c.state==="eating"){
+      c.timer-=dt;
+      if(c.timer<=0){
+        payAndLeave(c,false);
+        const t=layout.tables[c.tableIdx]; if(t&&t.taken===c.id) t.taken=null;
+        c.state="leaving"; c.tx=layout.door.x; c.ty=layout.worldH+50;
+      }
+    } else if(c.state==="leaving"){
+      if(moveTo(c,c.tx,c.ty,118*dt)) rt.customers.splice(i,1);
+    }
+  }
+
+  // --- drive-thru cars ---
+  if(layout.drive){
+    for(let i=rt.cars.length-1;i>=0;i--){
+      const car=rt.cars[i];
+      if(car.emote>0) car.emote-=dt;
+      const slot=layout.drive.slots[car.slot];
+
+      // order from the lane once near the front, collect at the window
+      if(car.slot>=0 && car.slot<=1 && !car.queued && car.state!=="off"){
+        queueOrder(car); car.queued=true;
+      }
+
+      if(car.state==="driving"){
+        if(moveTo(car,slot.x,slot.y,150*dt)){
+          car.state = car.slot===0 ? "ordering" : "waiting";
+        }
+      } else if(car.state==="waiting"){
+        // shuffle forward when the car ahead drives off
+        if(carSlotFree(car.slot-1)){ car.slot--; car.state="driving"; }
+        else moveTo(car,slot.x,slot.y,90*dt);
+      } else if(car.state==="ordering"){
+        car.patience-=dt;
+        if(fullyServed(car)){ car.state="paying"; car.timer=1.0; car.emote=1.2; }
+        else if(car.patience<=0){
+          cancelOrder(car); car.state="off"; rt.dayLost++; addFX(car.x,car.y-40,"…",INK2);
+        }
+      } else if(car.state==="paying"){
+        car.timer-=dt;
+        if(car.timer<=0){ payAndLeave(car,true); car.state="off"; }
+      } else if(car.state==="off"){
+        car.slot=-1;
+        car.y-=190*dt;
+        if(car.y<-140) rt.cars.splice(i,1);
+      }
+    }
+  }
+
+  // --- machines cook ---
+  rt.stations.forEach(s=>{
+    s.bob+=dt*4;
+    const q=rt.queues[s.type];
+    if(!s.ticket && s.emp && q.length){ s.ticket=q.shift(); s.progress=0; s.byPlayer=false; }
+    if(s.ticket){
+      if(s.ticket.done){
+        if(rt.ready.length < game.equip.checkout*4){
+          rt.ready.push({ id:uid(), item:s.ticket.item, age:0 });
+          s.ticket=null; s.progress=0;
+        }
+      } else {
+        s.progress += dt*(s.emp ? (isStar(s.emp)?STAR_COOK_SPEED:1.3) : 0.95);
+        if(s.progress>=ITEMS[s.ticket.item].cook) s.ticket.done=true;
+      }
+    }
+  });
+
+  // --- food nobody wants any more gets cleared, so it can't clog the counter forever ---
+  for(let i=rt.ready.length-1;i>=0;i--){
+    const r=rt.ready[i];
+    r.age=(r.age||0)+dt;
+    if(r.age>22 && patronsNeeding(r.item).length<=countCarried(r.item)){
+      const pos=readySlotPos(i);
+      if(pos) addFX(pos.x,pos.y-10,"tidied up",INK2);
+      rt.ready.splice(i,1);
+    }
+  }
+
+  // --- floating text ---
+  for(let i=rt.fx.length-1;i>=0;i--){ const f=rt.fx[i]; f.t-=dt; f.y-=dt*26; if(f.t<=0) rt.fx.splice(i,1); }
+}
+
+/* ============================================================
+   SECTION 8 — DAY START / END
+   ============================================================ */
+function startDay(){
+  const keepPlayer = rt && rt.player ? {x:rt.player.x,y:rt.player.y} : null;
+  rt=freshRuntime();
+  syncStations();
+  if(keepPlayer){ rt.player.x=keepPlayer.x; rt.player.y=keepPlayer.y; }
+  layout.tables.forEach(t=>t.taken=null);
+  rt.phase="playing";
+  save();
+}
+function endDay(){ rt.phase="night"; rt.nightT=0; save(); }
+
+function finishNight(){
+  rt.phase="summary";
+  // every 30th completed day earns an Employee of the Month pick
+  if(game.day % AWARD_EVERY === 0 && game.employees.length) game.awardDue=true;
+  document.getElementById("sumTitle").firstChild.nodeValue="Day "+game.day+" complete! ";
+  document.getElementById("sRev").textContent  = money(rt.dayRevenue);
+  document.getElementById("sCust").textContent = rt.dayCustomers;
+  document.getElementById("sCars").textContent = game.equip.drivethru ? rt.dayCars : "—";
+  document.getElementById("sLost").textContent = rt.dayLost;
+  document.getElementById("sLife").textContent = money(game.lifetime);
+  document.getElementById("sDay").textContent  = game.day;
+  document.getElementById("sBal").textContent  = money(game.money);
+  const sold=document.getElementById("sSold"); sold.innerHTML="";
+  menuItems().forEach(k=>{
+    const row=document.createElement("div"); row.className="sold-row";
+    row.innerHTML=`<span class="ico">${itemSVG(k,32)}</span><span>${ITEMS[k].name}</span><span class="n">${rt.daySold[k]}</span>`;
+    sold.appendChild(row);
+  });
+  document.getElementById("btnNextDay").textContent =
+    game.awardDue ? "Employee of the Month 🏆" : "Start next day ▶";
+  openModal("ovSummary"); save();
+}
+/** "Start next day" — but first hand out the award if one is due. */
+function nextDay(){
+  closeModal("ovSummary");
+  if(game.awardDue && game.employees.length){ openAward(); return; }
+  game.awardDue=false;
+  startNextDay();
+}
+function startNextDay(){ game.day++; startDay(); save(); }
+
+/* ============================================================
+   SECTION 9 — RENDERING
+   ============================================================ */
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+let scale=1;
+const FONT='"Baloo 2","Comic Sans MS","Chalkboard SE","Trebuchet MS",sans-serif';
+
+function pickWorldSize(sw,sh){
+  const ratio=sw/sh;
+  const w = ratio>=1.30 ? 900 : ratio>=0.80 ? 760 : 560;
+  const h = clamp(Math.round(w/ratio),460,1500);
+  if(w!==W||h!==H){ W=w; H=h; return true; }
+  return false;
+}
+function resize(){
+  const stage=document.getElementById("stage"), board=document.getElementById("board");
+  const sw=stage.clientWidth-16, sh=stage.clientHeight-16;
+  if(sw>0&&sh>0){
+    if(pickWorldSize(sw,sh)&&rt) syncStations();
+    const bw=Math.min(sw,1100,sh*(W/H));
+    board.style.width=bw+"px";
+    board.style.height=(bw*(H/W))+"px";
+  }
+  const r=cv.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2.5);
+  cv.width=Math.max(1,Math.round(r.width*dpr));
+  cv.height=Math.max(1,Math.round(r.height*dpr));
+  scale=cv.width/W;
+}
+window.addEventListener("resize",resize);
+window.addEventListener("orientationchange",()=>setTimeout(resize,150));
+
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);      ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function fillStroke(fill,stroke=INK,lw=3){
+  if(fill){ ctx.fillStyle=fill; ctx.fill(); }
+  if(stroke){ ctx.lineWidth=lw; ctx.strokeStyle=stroke; ctx.stroke(); }
+}
+function circle(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.closePath(); }
+function ell(x,y,rx,ry,rot){ ctx.beginPath(); ctx.ellipse(x,y,rx,ry,rot||0,0,Math.PI*2); ctx.closePath(); }
+function shade(hex,amt){
+  const c=hex.replace("#","");
+  const n=parseInt(c.length===3?c.split("").map(x=>x+x).join(""):c,16);
+  const r=clamp((n>>16)+amt,0,255), g=clamp(((n>>8)&255)+amt,0,255), b=clamp((n&255)+amt,0,255);
+  return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+
+function render(){
+  ctx.setTransform(scale,0,0,scale,0,0);
+  ctx.clearRect(0,0,W,H);
+  ctx.lineJoin="round"; ctx.lineCap="round";
+  ctx.fillStyle="#f0dfe6"; ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+  ctx.translate(layout.offX,layout.offY);
+  ctx.scale(layout.zoom,layout.zoom);
+
+  drawDriveThru();
+  drawFloor();
+  drawKitchen();
+  drawCounters();
+  drawTables();
+
+  if(layout.drive) rt.cars.forEach(drawCar);
+
+  const folk=[];
+  rt.customers.forEach(c=>folk.push({y:c.y,d:()=>drawCustomer(c)}));
+  rt.waiters.forEach(w=>folk.push({y:w.y,d:()=>drawWaiter(w)}));
+  folk.push({y:rt.player.y,d:()=>drawPlayer(rt.player)});
+  folk.sort((a,b)=>a.y-b.y).forEach(f=>f.d());
+
+  if(touch.active){
+    ctx.save(); ctx.globalAlpha=.4;
+    circle(touch.x,touch.y,16); fillStroke(null,BLUSH_D,4);
+    circle(touch.x,touch.y,5); fillStroke(BLUSH_D,null,0);
+    ctx.restore();
+  }
+
+  rt.fx.forEach(f=>{
+    ctx.globalAlpha=clamp(f.t,0,1);
+    ctx.font="800 20px "+FONT; ctx.textAlign="center";
+    ctx.lineWidth=5; ctx.strokeStyle=CREAM;
+    ctx.strokeText(f.txt,f.x,f.y); ctx.fillStyle=f.color; ctx.fillText(f.txt,f.x,f.y);
+    ctx.globalAlpha=1;
+  });
+
+  ctx.restore();
+  if(rt.phase==="night"||rt.phase==="summary") drawNight();
+}
+
+function drawFloor(){
+  const wh=layout.worldH, iw=layout.interiorW;
+  ctx.fillStyle=CREAM; ctx.fillRect(0,0,iw,wh);
+  ctx.strokeStyle=GROUT; ctx.lineWidth=2;
+  for(let x=0;x<=iw;x+=45){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,wh); ctx.stroke(); }
+  for(let y=0;y<=wh;y+=45){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(iw,y); ctx.stroke(); }
+
+  ctx.fillStyle=BLUSH;
+  ctx.fillRect(0,0,iw,10); ctx.fillRect(0,0,10,wh); ctx.fillRect(iw-10,0,10,wh);
+  const dw=110, dx=layout.door.x;
+  ctx.fillRect(0,wh-10,dx-dw/2,10); ctx.fillRect(dx+dw/2,wh-10,iw-(dx+dw/2),10);
+
+  rr(dx-dw/2,wh-34,dw,26,8); fillStroke(BUTTER,INK,3);
+  ctx.fillStyle=INK; ctx.font="800 13px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("WELCOME",dx,wh-21);
+
+  ctx.fillStyle=LAV; ctx.fillRect(10,layout.checkoutBottom+2,iw-20,5);
+
+  // drive-thru hatch in the right wall
+  if(layout.drive){
+    const d=layout.drive;
+    rr(iw-16,d.windowY-34,22,68,7); fillStroke(SKY,INK,3);
+    rr(iw-13,d.windowY-30,16,60,5); fillStroke(CREAM,null,0);
+    ctx.save();
+    ctx.translate(iw-30,d.windowY); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle=INK; ctx.font="800 12px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText("DRIVE-THRU",0,0);
+    ctx.restore();
+  }
+}
+
+function drawDriveThru(){
+  if(!layout.drive) return;
+  const iw=layout.interiorW, wh=layout.worldH, lw=layout.driveW;
+  ctx.fillStyle=ASPHALT; ctx.fillRect(iw,0,lw,wh);
+  ctx.strokeStyle="#cfc7dc"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(iw+6,0); ctx.lineTo(iw+6,wh); ctx.stroke();
+  ctx.setLineDash([16,16]); ctx.strokeStyle=CREAM; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(iw+lw/2,0); ctx.lineTo(iw+lw/2,wh); ctx.stroke();
+  ctx.setLineDash([]);
+  // arrow showing which way cars travel
+  ctx.save();
+  ctx.globalAlpha=.5; ctx.strokeStyle=CREAM; ctx.lineWidth=5;
+  const ay=wh-70;
+  ctx.beginPath(); ctx.moveTo(iw+lw/2,ay); ctx.lineTo(iw+lw/2,ay-34); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(iw+lw/2-11,ay-24); ctx.lineTo(iw+lw/2,ay-38); ctx.lineTo(iw+lw/2+11,ay-24); ctx.stroke();
+  ctx.restore();
+}
+
+function drawKitchen(){
+  const iw=layout.interiorW;
+  rr(10,4,iw-20,layout.kitchenBottom-4,14); fillStroke(MINT,INK,4);
+  ctx.save(); rr(10,4,iw-20,layout.kitchenBottom-4,14); ctx.clip();
+  ctx.fillStyle="rgba(255,255,255,.4)"; ctx.fillRect(10,4,iw-20,14);
+  ctx.restore();
+
+  rt.stations.forEach(s=>{
+    const q=rt.queues[s.type];
+    if(s.type==="grill") drawGrill(s);
+    else if(s.type==="fryer") drawFryer(s);
+    else if(s.type==="shake") drawShakeM(s);
+    else drawSodaM(s);
+
+    if(s.ticket&&!s.ticket.done) drawProgress(s.x-31,s.y-28, clamp(s.progress/ITEMS[s.ticket.item].cook,0,1));
+    if(s.ticket&&s.ticket.done) drawBubble(s.x-31,s.y-34,()=>drawItem(s.ticket.item,0,0,20));
+    if(!s.ticket&&!s.emp&&q.length){
+      const bob=Math.sin(rt.tGlobal*6)*3;
+      drawBubble(s.x-31,s.y-34+bob,()=>{
+        ctx.fillStyle=BLUSH_D; ctx.font="900 24px "+FONT;
+        ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("!",0,1);
+      });
+    }
+    if(q.length){
+      circle(s.x+30,s.y-24,11); fillStroke(INK,CREAM,3);
+      ctx.fillStyle=CREAM; ctx.font="800 13px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(String(q.length),s.x+30,s.y-23);
+    }
+    if(s.emp) drawStaffAt(s.emp,s.x,s.y+34,15,"cook");
+  });
+}
+function drawProgress(x,y,p){
+  ctx.save();
+  ctx.lineWidth=7; ctx.strokeStyle=INK;
+  ctx.beginPath(); ctx.arc(x,y,13,0,Math.PI*2); ctx.stroke();
+  ctx.lineWidth=6; ctx.strokeStyle=CREAM;
+  ctx.beginPath(); ctx.arc(x,y,13,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle=MINT_D;
+  ctx.beginPath(); ctx.arc(x,y,13,-Math.PI/2,-Math.PI/2+Math.PI*2*p); ctx.stroke();
+  ctx.restore();
+}
+function drawBubble(x,y,inner){
+  ctx.save(); ctx.translate(x,y);
+  circle(0,0,17); fillStroke(CREAM,INK,3);
+  ctx.beginPath(); ctx.moveTo(-5,13); ctx.lineTo(5,13); ctx.lineTo(0,22); ctx.closePath();
+  fillStroke(CREAM,INK,3);
+  inner(); ctx.restore();
+}
+
+function drawGrill(s){
+  ctx.save(); ctx.translate(s.x,s.y);
+  rr(-38,-24,76,48,11); fillStroke("#cfc6d2",INK,4);
+  rr(-31,-17,62,34,8);  fillStroke("#b3a8bb",INK,3);
+  ctx.strokeStyle="#9a8ea3"; ctx.lineWidth=3;
+  for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(-27,i*9); ctx.lineTo(27,i*9); ctx.stroke(); }
+  if(s.ticket){
+    circle(0,0,11); fillStroke("#c08d6c",INK,3);
+    const f=Math.sin(rt.tGlobal*9)*2;
+    ctx.globalAlpha=.75; ctx.fillStyle=PEACH;
+    ell(-14,-12+f,5,8); ctx.fill(); ell(14,-14-f,4,7); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  ctx.fillStyle=INK; ctx.font="800 11px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("GRILL",0,-31);
+  ctx.restore();
+}
+function drawFryer(s){
+  ctx.save(); ctx.translate(s.x,s.y);
+  rr(-38,-24,76,48,11); fillStroke("#e6ded6",INK,4);
+  rr(-30,-16,60,32,8);  fillStroke(BUTTER,INK,3);
+  if(s.ticket){
+    rr(-16,-10,32,22,5); fillStroke("#cdc4cf",INK,3);
+    ctx.fillStyle=BUTTER_D;
+    for(let i=0;i<5;i++){ rr(-13+i*5.5,-8,3.5,16,1.5); ctx.fill(); }
+    const b=Math.sin(rt.tGlobal*10);
+    ctx.fillStyle="rgba(255,255,255,.75)";
+    circle(-20,-6+b*2,3); ctx.fill(); circle(20,-10-b*2,2.5); ctx.fill();
+  }
+  ctx.fillStyle=INK; ctx.font="800 11px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("FRYER",0,-31);
+  ctx.restore();
+}
+function drawSodaM(s){
+  ctx.save(); ctx.translate(s.x,s.y);
+  rr(-34,-26,68,52,11); fillStroke(CREAM,INK,4);
+  rr(-27,-19,54,20,6);  fillStroke(SKY,INK,3);
+  rr(-12,4,24,16,5);    fillStroke("#ded6e2",INK,3);
+  if(s.ticket){ ctx.save(); ctx.translate(0,8); drawItem("soda",0,0,20); ctx.restore(); }
+  ctx.fillStyle=INK; ctx.font="800 11px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("SODA",0,-33);
+  ctx.restore();
+}
+
+function drawShakeM(s){
+  ctx.save(); ctx.translate(s.x,s.y);
+  rr(-34,-26,68,52,11); fillStroke(LAV,INK,4);           // mixer body
+  rr(-28,-20,56,14,6);  fillStroke(CREAM,INK,3);
+  // spindle + mixing cup
+  ctx.lineWidth=3; ctx.strokeStyle=INK;
+  ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(0,2); ctx.stroke();
+  const spin=s.ticket?Math.sin(rt.tGlobal*24)*1.6:0;
+  ctx.save(); ctx.translate(spin,0);
+  ctx.beginPath(); ctx.moveTo(-11,2); ctx.lineTo(11,2); ctx.lineTo(8,20); ctx.lineTo(-8,20); ctx.closePath();
+  fillStroke("#dcd6e8",INK,3);
+  ctx.restore();
+  if(s.ticket){
+    ctx.fillStyle="#f9c9d8";
+    ctx.beginPath(); ctx.moveTo(-9,8); ctx.lineTo(9,8); ctx.lineTo(7,18); ctx.lineTo(-7,18); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=.8; ctx.fillStyle=CREAM;
+    circle(-15,-2+Math.sin(rt.tGlobal*9)*2,3); ctx.fill();
+    circle(15,-6-Math.sin(rt.tGlobal*9)*2,2.4); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  ctx.fillStyle=INK; ctx.font="800 11px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("SHAKES",0,-33);
+  ctx.restore();
+}
+
+function drawCounters(){
+  rt.checkouts.forEach(c=>{
+    ctx.save(); ctx.translate(c.x,c.y);
+    rr(-52,-22,104,44,11); fillStroke(PEACH,INK,4);
+    rr(-52,-22,104,15,8);  fillStroke(BUTTER,INK,3);
+    rr(24,-11,20,19,5);    fillStroke(CREAM,INK,3);
+    ctx.fillStyle=INK; ctx.font="800 10px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText("PICK UP",-14,7);
+    ctx.restore();
+  });
+  rt.ready.forEach((r,i)=>{
+    const pos=readySlotPos(i); if(!pos) return;
+    ctx.save(); ctx.translate(pos.x,pos.y+Math.sin(rt.tGlobal*5+i)*2);
+    ctx.globalAlpha=.16; ctx.fillStyle=INK; ell(0,12,12,4); ctx.fill(); ctx.globalAlpha=1;
+    drawItem(r.item,0,0,26);
+    ctx.restore();
+  });
+}
+function readySlotPos(i){
+  const per=4, ck=rt.checkouts[Math.floor(i/per)];
+  if(!ck) return null;
+  return { x: ck.x-34+(i%per)*23, y: ck.y-17 };
+}
+
+function drawTables(){
+  layout.tables.forEach(t=>{
+    ctx.save(); ctx.translate(t.x,t.y);
+    [[-1,0],[1,0],[0,-1]].forEach(([dx,dy])=>{
+      ctx.save(); ctx.translate(dx*(t.r+11),dy*(t.r+11));
+      rr(-9,-9,18,18,6); fillStroke(BUTTER,INK,3);
+      ctx.restore();
+    });
+    ctx.globalAlpha=.13; ctx.fillStyle=INK; circle(0,5,t.r); ctx.fill(); ctx.globalAlpha=1;
+    circle(0,0,t.r);      fillStroke(CREAM,INK,4);
+    circle(0,0,t.r*0.62); fillStroke(BLUSH,INK,3);
+    ctx.restore();
+  });
+}
+
+/* ---------- food icons ---------- */
+function drawItem(item,x,y,s){
+  ctx.save(); ctx.translate(x,y); ctx.scale(s/28,s/28);
+  ctx.lineWidth=3; ctx.strokeStyle=INK; ctx.lineJoin="round";
+  if(item==="burger"){
+    ctx.beginPath(); ctx.moveTo(-13,-2); ctx.quadraticCurveTo(-13,-15,0,-15); ctx.quadraticCurveTo(13,-15,13,-2);
+    ctx.closePath(); fillStroke(PEACH,INK,3);
+    ctx.fillStyle="#fff6e4";
+    [[-6,-9],[0,-12],[6,-9]].forEach(p=>{ ell(p[0],p[1],2,1.4,.3); ctx.fill(); });
+    ctx.beginPath(); ctx.moveTo(-14,-2); ctx.lineTo(14,-2); ctx.lineTo(11,4); ctx.lineTo(-11,4); ctx.closePath();
+    fillStroke(BUTTER,INK,3);
+    rr(-13,2,26,7,3.5); fillStroke("#c08d6c",INK,3);
+    ctx.beginPath(); ctx.moveTo(-13,8); ctx.quadraticCurveTo(-13,15,0,15); ctx.quadraticCurveTo(13,15,13,8);
+    ctx.closePath(); fillStroke("#f3b985",INK,3);
+  } else if(item==="fries"){
+    [[-8,-8,-6],[-3,-13,0],[3,-11,4],[8,-7,8]].forEach(f=>{
+      ctx.save(); ctx.translate(f[0],f[1]); ctx.rotate(f[2]*0.03);
+      rr(-3,-6,6,18,2); fillStroke(BUTTER,INK,2.6); ctx.restore();
+    });
+    ctx.beginPath(); ctx.moveTo(-12,-1); ctx.lineTo(12,-1); ctx.lineTo(8,15); ctx.lineTo(-8,15); ctx.closePath();
+    fillStroke(BLUSH,INK,3);
+    ctx.fillStyle=CREAM; rr(-7,3,14,5,2); ctx.fill();
+  } else if(item==="shake"){
+    // tall cup, swirl of cream, cherry, stripey straw
+    ctx.strokeStyle=INK; ctx.lineWidth=3.2;
+    ctx.beginPath(); ctx.moveTo(2,-12); ctx.lineTo(9,-26); ctx.stroke();
+    ctx.strokeStyle=BLUSH_D; ctx.lineWidth=1.8;
+    ctx.beginPath(); ctx.moveTo(2,-12); ctx.lineTo(9,-26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-10,-6); ctx.lineTo(10,-6); ctx.lineTo(7,16); ctx.lineTo(-7,16); ctx.closePath();
+    fillStroke("#f9c9d8",INK,3);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(-10,-6); ctx.lineTo(10,-6); ctx.lineTo(7,16); ctx.lineTo(-7,16); ctx.closePath(); ctx.clip();
+    ctx.fillStyle=CREAM; ctx.fillRect(-11,7,22,4); ctx.restore();
+    circle(-4,-10,5.5); fillStroke(CREAM,INK,2.6);
+    circle( 4,-11,5);   fillStroke(CREAM,INK,2.6);
+    circle( 0,-16,4.4); fillStroke(CREAM,INK,2.6);
+    circle( 0,-22,3.2); fillStroke("#f28ea8",INK,2.4);
+  } else {
+    ctx.beginPath(); ctx.moveTo(-10,-8); ctx.lineTo(10,-8); ctx.lineTo(7,15); ctx.lineTo(-7,15); ctx.closePath();
+    fillStroke(CREAM,INK,3);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(-10,-8); ctx.lineTo(10,-8); ctx.lineTo(7,15); ctx.lineTo(-7,15); ctx.closePath(); ctx.clip();
+    ctx.fillStyle=BLUSH; ctx.fillRect(-11,-1,22,6); ctx.restore();
+    rr(-12,-12,24,6,3); fillStroke(BLUSH,INK,3);
+    ctx.strokeStyle=INK;  ctx.lineWidth=3.4; ctx.beginPath(); ctx.moveTo(4,-12); ctx.lineTo(8,-22); ctx.stroke();
+    ctx.strokeStyle=MINT_D; ctx.lineWidth=2;  ctx.beginPath(); ctx.moveTo(4,-12); ctx.lineTo(8,-22); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ---------- the cute animal renderer ----------
+   Chibi proportions: big head, small body, expressive eyes.        */
+function drawAnimal(sp,color,x,y,r,mood,o){
+  o=o||{};
+  const walk=o.walk||0, dir=o.dir||1, hat=o.hat, apron=o.apron, bow=o.bow, cap=o.cap;
+  const dark=shade(color,-22), light=shade(color,20), pink="#f3a0b4";
+  const step=Math.sin(walk)*r*0.14;
+
+  ctx.save(); ctx.translate(x,y);
+  ctx.lineWidth=3; ctx.strokeStyle=INK;
+
+  ctx.globalAlpha=.15; ctx.fillStyle=INK;
+  ell(0,r*1.02,r*0.78,r*0.24); ctx.fill(); ctx.globalAlpha=1;
+
+  /* --- tail --- */
+  if(sp==="cat"){
+    ctx.save(); ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(dir*r*0.5,r*0.62);
+    ctx.quadraticCurveTo(dir*r*1.42,r*0.66,dir*r*1.16,-r*0.30+Math.sin(walk*.7)*r*.1);
+    ctx.lineWidth=r*0.42; ctx.strokeStyle=INK; ctx.stroke();
+    ctx.lineWidth=r*0.27; ctx.strokeStyle=color; ctx.stroke();
+    ctx.restore();
+    circle(dir*r*1.16,-r*0.30+Math.sin(walk*.7)*r*.1,r*0.13); fillStroke(light,null,0);
+  } else if(sp==="dog"){
+    ctx.save(); ctx.lineCap="round";
+    const wag=Math.sin(rt.tGlobal*7)*0.34;
+    ctx.beginPath(); ctx.moveTo(dir*r*0.5,r*0.6);
+    ctx.quadraticCurveTo(dir*r*1.2,r*0.5,dir*r*(1.0+wag*0.2),r*(0.0+wag));
+    ctx.lineWidth=r*0.40; ctx.strokeStyle=INK; ctx.stroke();
+    ctx.lineWidth=r*0.25; ctx.strokeStyle=color; ctx.stroke();
+    ctx.restore();
+  } else if(sp==="bunny"){
+    circle(dir*r*0.78,r*0.62,r*0.26); fillStroke("#fffaf4",INK,3);
+  } else {
+    ell(dir*r*0.68,r*0.66,r*0.16,r*0.12); fillStroke(dark,INK,2.6);
+  }
+
+  /* --- feet --- */
+  ell(-r*0.32,r*0.92+step, r*0.20,r*0.13); fillStroke(dark,INK,2.6);
+  ell( r*0.32,r*0.92-step, r*0.20,r*0.13); fillStroke(dark,INK,2.6);
+
+  /* --- body --- */
+  ell(0,r*0.55,r*0.60,r*0.50); fillStroke(color,INK,3);
+  ell(0,r*0.62,r*0.36,r*0.34); fillStroke(light,null,0);
+
+  if(apron){
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(-r*0.34,r*0.20); ctx.lineTo(r*0.34,r*0.20);
+    ctx.quadraticCurveTo(r*0.46,r*0.72, r*0.24,r*0.96);
+    ctx.lineTo(-r*0.24,r*0.96);
+    ctx.quadraticCurveTo(-r*0.46,r*0.72,-r*0.34,r*0.20);
+    ctx.closePath(); fillStroke(CREAM,INK,2.6);
+    ctx.restore();
+  }
+
+  /* --- arms --- */
+  const armSwing=Math.sin(walk)*r*0.16;
+  ell(-r*0.60,r*0.46+armSwing, r*0.17,r*0.24, .35); fillStroke(color,INK,2.6);
+  ell( r*0.60,r*0.46-armSwing, r*0.17,r*0.24,-.35); fillStroke(color,INK,2.6);
+
+  /* --- ears (behind the head) --- */
+  const hy=-r*0.24;
+  if(sp==="cat"){
+    [-1,1].forEach(s=>{
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.26,hy-r*0.50);
+      ctx.quadraticCurveTo(s*r*0.86,hy-r*1.44, s*r*0.88,hy-r*0.30);
+      ctx.closePath(); fillStroke(color,INK,3);
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.40,hy-r*0.56);
+      ctx.quadraticCurveTo(s*r*0.72,hy-r*1.10, s*r*0.72,hy-r*0.42);
+      ctx.closePath(); fillStroke(pink,null,0);
+    });
+  } else if(sp==="bunny"){
+    [-1,1].forEach(s=>{
+      ell(s*r*0.36,hy-r*1.10, r*0.22,r*0.72, s*0.16); fillStroke(color,INK,3);
+      ell(s*r*0.36,hy-r*1.08, r*0.10,r*0.50, s*0.16); fillStroke(pink,null,0);
+    });
+  } else if(sp==="dog"){
+    // Long ears hung from the TOP of the skull and drooping past the jaw.
+    // Round ears pinned at eye level are what made these read as monkeys.
+    [-1,1].forEach(s=>{
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.46,hy-r*0.66);
+      ctx.quadraticCurveTo(s*r*1.20,hy-r*0.44, s*r*1.06,hy+r*0.50);
+      ctx.quadraticCurveTo(s*r*0.94,hy+r*0.92, s*r*0.62,hy+r*0.60);
+      ctx.quadraticCurveTo(s*r*0.50,hy+r*0.10, s*r*0.46,hy-r*0.66);
+      ctx.closePath(); fillStroke(dark,INK,3);
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.60,hy-r*0.40);
+      ctx.quadraticCurveTo(s*r*0.94,hy-r*0.16, s*r*0.86,hy+r*0.42);
+      ctx.quadraticCurveTo(s*r*0.74,hy+r*0.60, s*r*0.66,hy+r*0.34);
+      ctx.closePath(); fillStroke(shade(color,-6),null,0);
+    });
+  } else {
+    [-1,1].forEach(s=>{
+      circle(s*r*0.66,hy-r*0.58,r*0.30); fillStroke(dark,INK,3);
+      circle(s*r*0.66,hy-r*0.58,r*0.15); fillStroke(pink,null,0);
+    });
+  }
+
+  /* --- head --- */
+  circle(0,hy,r*0.84); fillStroke(color,INK,3);
+  // Keep face markings subtle — a big pale muzzle plus pale cheeks turns every
+  // species into a panda and washes out the ear silhouette that tells them apart.
+  const face=shade(color,9);
+  if(sp==="hamster"){
+    circle(-r*0.60,hy+r*0.24,r*0.21); fillStroke(face,null,0);
+    circle( r*0.60,hy+r*0.24,r*0.21); fillStroke(face,null,0);
+  }
+  if(sp==="dog"){
+    // a snout that sticks out past the head, outlined so it reads in silhouette
+    ell(0,hy+r*0.50,r*0.42,r*0.32); fillStroke(shade(color,16),INK,2.8);
+    ctx.globalAlpha=.45; ctx.fillStyle=face;                 // brow patches
+    circle(-r*0.30,hy-r*0.32,r*0.16); ctx.fill();
+    circle( r*0.30,hy-r*0.32,r*0.16); ctx.fill();
+    ctx.globalAlpha=1;
+  } else {
+    ell(0,hy+r*0.31,r*0.33,r*0.20); fillStroke(face,null,0); // muzzle
+  }
+
+  /* --- eyes --- */
+  const ex=r*0.30, ey=hy-r*0.06;
+  if(mood==="happy"){
+    ctx.lineWidth=3.2; ctx.strokeStyle=INK;
+    [-1,1].forEach(s=>{ ctx.beginPath(); ctx.arc(s*ex,ey+r*0.04,r*0.17,Math.PI*1.10,Math.PI*1.90); ctx.stroke(); });
+  } else if(mood==="sad"){
+    ctx.lineWidth=3.2; ctx.strokeStyle=INK;
+    [-1,1].forEach(s=>{ ctx.beginPath(); ctx.arc(s*ex,ey+r*0.14,r*0.17,Math.PI*0.12,Math.PI*0.88); ctx.stroke(); });
+  } else {
+    [-1,1].forEach(s=>{
+      ell(s*ex,ey,r*0.19,r*0.22); fillStroke("#fffdfa",INK,2.4);
+      circle(s*ex+r*0.02,ey+r*0.02,r*0.12); fillStroke("#4a3a36",null,0);
+      ctx.fillStyle="#fff";
+      circle(s*ex-r*0.04,ey-r*0.05,r*0.055); ctx.fill();
+      circle(s*ex+r*0.07,ey+r*0.07,r*0.026); ctx.fill();
+    });
+  }
+
+  /* --- blush --- */
+  ctx.globalAlpha=.5; ctx.fillStyle=pink;
+  ell(-r*0.56,hy+r*0.20,r*0.17,r*0.11); ctx.fill();
+  ell( r*0.56,hy+r*0.20,r*0.17,r*0.11); ctx.fill();
+  ctx.globalAlpha=1;
+
+  /* --- nose + mouth --- */
+  if(sp==="dog"){
+    ell(0,hy+r*0.36,r*0.19,r*0.14); fillStroke("#4a3a36",null,0);   // big wet nose
+    ctx.fillStyle="#fff"; ctx.globalAlpha=.5;
+    ell(-r*0.06,hy+r*0.32,r*0.06,r*0.04); ctx.fill(); ctx.globalAlpha=1;
+    ctx.lineWidth=2.4; ctx.strokeStyle=INK;
+    ctx.beginPath();
+    ctx.moveTo(0,hy+r*0.50); ctx.lineTo(0,hy+r*0.58);
+    ctx.moveTo(0,hy+r*0.58); ctx.quadraticCurveTo(-r*0.15,hy+r*0.72,-r*0.26,hy+r*0.56);
+    ctx.moveTo(0,hy+r*0.58); ctx.quadraticCurveTo( r*0.15,hy+r*0.72, r*0.26,hy+r*0.56);
+    ctx.stroke();
+    if(mood==="happy"){                                             // lolling tongue
+      ctx.beginPath();
+      rr(-r*0.11,hy+r*0.60,r*0.22,r*0.26,r*0.10);
+      fillStroke("#f28ea8",INK,2.2);
+    }
+  } else {
+    ctx.fillStyle=pink;
+    ctx.beginPath();
+    ctx.moveTo(-r*0.085,hy+r*0.19); ctx.lineTo(r*0.085,hy+r*0.19);
+    ctx.quadraticCurveTo(0,hy+r*0.33,-r*0.085,hy+r*0.19);
+    ctx.closePath(); ctx.fill();
+    ctx.lineWidth=2.4; ctx.strokeStyle=INK;
+    ctx.beginPath();
+    ctx.moveTo(0,hy+r*0.30);
+    ctx.quadraticCurveTo(-r*0.13,hy+r*0.46,-r*0.22,hy+r*0.32);
+    ctx.moveTo(0,hy+r*0.30);
+    ctx.quadraticCurveTo( r*0.13,hy+r*0.46, r*0.22,hy+r*0.32);
+    ctx.stroke();
+  }
+  if(sp==="bunny"){                                  // buck teeth
+    rr(-r*0.10,hy+r*0.36,r*0.09,r*0.14,2); fillStroke("#fffdfa",INK,2);
+    rr( r*0.01,hy+r*0.36,r*0.09,r*0.14,2); fillStroke("#fffdfa",INK,2);
+  }
+  if(sp==="cat"){
+    ctx.lineWidth=1.9; ctx.strokeStyle=INK;
+    [-1,1].forEach(s=>{
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.44,hy+r*0.20); ctx.lineTo(s*r*0.92,hy+r*0.10);
+      ctx.moveTo(s*r*0.44,hy+r*0.28); ctx.lineTo(s*r*0.92,hy+r*0.30);
+      ctx.stroke();
+    });
+  }
+
+  if(cap){                                            // drive-thru visor
+    ctx.save(); ctx.translate(0,hy-r*0.62);
+    rr(-r*0.50,-r*0.14,r*1.00,r*0.24,r*0.10); fillStroke(SKY,INK,2.6);
+    ctx.beginPath();
+    ctx.moveTo(-r*0.52,r*0.08); ctx.quadraticCurveTo(0,r*0.44,r*0.52,r*0.08);
+    ctx.quadraticCurveTo(0,r*0.20,-r*0.52,r*0.08); ctx.closePath();
+    fillStroke(shade(SKY,-18),INK,2.4);
+    ctx.restore();
+  }
+  if(hat){                                            // chef's toque
+    ctx.save(); ctx.translate(0,hy-r*0.78);
+    rr(-r*0.44,r*0.06,r*0.88,r*0.26,r*0.10); fillStroke(CREAM,INK,2.8);
+    circle(-r*0.28,-r*0.10,r*0.24); fillStroke(CREAM,INK,2.8);
+    circle( r*0.28,-r*0.10,r*0.24); fillStroke(CREAM,INK,2.8);
+    circle(0,-r*0.22,r*0.28);       fillStroke(CREAM,INK,2.8);
+    ctx.restore();
+  }
+  // Hair bow marks a girl. Drawn last so it sits on top of a toque or visor.
+  if(bow){
+    ctx.save(); ctx.translate(-r*0.62,hy-r*0.46);
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-r*0.32,-r*0.20); ctx.lineTo(-r*0.32,r*0.18); ctx.closePath();
+    fillStroke(BLUSH,INK,2.4);
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(r*0.32,-r*0.20); ctx.lineTo(r*0.32,r*0.18); ctx.closePath();
+    fillStroke(BLUSH,INK,2.4);
+    circle(0,0,r*0.11); fillStroke(BLUSH_D,INK,2);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* ---------- who's on the floor ---------- */
+function drawCarry(carry,x,y){
+  carry.forEach((item,i)=>{
+    ctx.save(); ctx.translate(x,y-i*15);
+    ctx.globalAlpha=.18; ctx.fillStyle=INK; ell(0,10,10,3.5); ctx.fill(); ctx.globalAlpha=1;
+    drawItem(item,0,0,23); ctx.restore();
+  });
+}
+
+function drawPlayer(p){
+  ctx.save();
+  ctx.globalAlpha=.35; ctx.strokeStyle=MINT_D; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.ellipse(p.x,p.y+20,26,9,0,0,Math.PI*2); ctx.stroke();
+  ctx.restore();
+  drawAnimal("cat",game.catColor,p.x,p.y-(p.moving?Math.abs(Math.sin(p.bob))*2:0),21,
+             p.carry.length?"happy":"normal",{walk:p.bob,dir:p.dir,hat:true,apron:true});
+  drawCarry(p.carry,p.x,p.y-52);
+  ctx.save();
+  ctx.font="800 11px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+  const w=Math.max(34,ctx.measureText("YOU").width+14);
+  rr(p.x-w/2,p.y+24,w,16,8); fillStroke(MINT,INK,2.6);
+  ctx.fillStyle=INK; ctx.fillText("YOU",p.x,p.y+32);
+  ctx.restore();
+}
+
+function drawWaiter(w){
+  const yy=w.y-(w.moving?Math.abs(Math.sin(w.bob))*2:0);
+  drawAnimal(w.emp.species,w.emp.color,w.x,yy,17,
+             "normal",{walk:w.bob,dir:w.dir,apron:true,bow:w.emp.gender==="girl",cap:w.role==="drivethru"});
+  if(isStar(w.emp)) drawCrown(w.x,yy-30,15);
+  drawCarry(w.carry,w.x,w.y-44);
+  nameTag(w.emp.name,w.x,w.y+20,w.role==="drivethru"?SKY:LAV);
+}
+
+function drawStaffAt(emp,x,y,r,kind){
+  const yy=y+Math.sin(rt.tGlobal*3+(emp.id||1))*1.5;
+  drawAnimal(emp.species,emp.color,x,yy,r,"normal",
+             {walk:0,dir:1,apron:true,hat:kind==="cook",bow:emp.gender==="girl"});
+  if(isStar(emp)) drawCrown(x,yy-r*1.9,r*0.85);
+  nameTag(emp.name,x,y+r+3,BUTTER);
+}
+
+/** little gold crown marking the Employee of the Month */
+function drawCrown(x,y,s){
+  ctx.save(); ctx.translate(x,y+Math.sin(rt.tGlobal*3)*1.5);
+  ctx.beginPath();
+  ctx.moveTo(-s*0.5,s*0.30); ctx.lineTo(-s*0.5,-s*0.24); ctx.lineTo(-s*0.18,s*0.02);
+  ctx.lineTo(0,-s*0.36); ctx.lineTo(s*0.18,s*0.02); ctx.lineTo(s*0.5,-s*0.24);
+  ctx.lineTo(s*0.5,s*0.30); ctx.closePath();
+  fillStroke(BUTTER_D,INK,2.4);
+  ctx.restore();
+}
+function nameTag(txt,x,y,bg){
+  ctx.save();
+  ctx.font="800 10px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+  const w=Math.max(30,ctx.measureText(txt).width+12);
+  rr(x-w/2,y,w,15,7); fillStroke(bg,INK,2.5);
+  ctx.fillStyle=INK; ctx.fillText(txt,x,y+8);
+  ctx.restore();
+}
+
+function drawCustomer(c){
+  const mood=c.sad?"sad":(c.emote>0?"happy":"normal");
+  drawAnimal(c.species,c.color,c.x,c.y-(c.moving?Math.abs(Math.sin(c.bob))*2:0),18,mood,{walk:c.bob,dir:c.dir});
+
+  if(c.state==="sitting"){
+    orderBubble(c,c.x,c.y-50);
+    const p=clamp(c.patience/c.patienceMax,0,1);
+    ctx.save(); ctx.translate(c.x,c.y+26);
+    rr(-20,-4,40,8,4); fillStroke(CREAM,INK,2.5);
+    rr(-18,-2.3,36*p,4.6,2.3);
+    ctx.fillStyle = p>0.5?MINT_D : p>0.22?BUTTER_D : BLUSH_D; ctx.fill();
+    ctx.restore();
+  }
+  if(c.emote>0&&c.state!=="leaving") heart(c.x+20,c.y-30-(1.2-c.emote)*10,clamp(c.emote,0,1));
+}
+function orderBubble(p,x,y){
+  const all=p.order, bw=14+all.length*26;
+  ctx.save(); ctx.translate(x,y);
+  rr(-bw/2,-19,bw,38,12); fillStroke(CREAM,INK,3);
+  ctx.beginPath(); ctx.moveTo(-6,17); ctx.lineTo(6,17); ctx.lineTo(0,27); ctx.closePath();
+  fillStroke(CREAM,INK,3);
+  const gc=p.got.slice();
+  all.forEach((it,i)=>{
+    const gi=gc.indexOf(it), done=gi>=0;
+    if(done) gc.splice(gi,1);
+    ctx.save(); ctx.translate(-bw/2+19+i*26,0);
+    ctx.globalAlpha=done?0.30:1; drawItem(it,0,0,24); ctx.globalAlpha=1;
+    if(done){
+      ctx.strokeStyle=MINT_D; ctx.lineWidth=3.5;
+      ctx.beginPath(); ctx.moveTo(-7,0); ctx.lineTo(-2,6); ctx.lineTo(8,-7); ctx.stroke();
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+}
+function heart(x,y,a){
+  ctx.save(); ctx.globalAlpha=a; ctx.translate(x,y);
+  ctx.fillStyle="#f58aa6"; ctx.beginPath();
+  ctx.moveTo(0,4); ctx.bezierCurveTo(-9,-4,-4,-11,0,-6); ctx.bezierCurveTo(4,-11,9,-4,0,4);
+  ctx.closePath(); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=INK; ctx.stroke();
+  ctx.restore();
+}
+
+function drawCar(car){
+  const x=car.x,y=car.y;
+  ctx.save(); ctx.translate(x,y);
+  ctx.globalAlpha=.16; ctx.fillStyle=INK; ell(0,44,30,8); ctx.fill(); ctx.globalAlpha=1;
+  // wheels
+  [-1,1].forEach(s=>{ rr(s*28-6,-24,12,20,5); fillStroke("#6d6069",INK,2.6);
+                      rr(s*28-6, 8,12,20,5); fillStroke("#6d6069",INK,2.6); });
+  rr(-30,-42,60,88,17); fillStroke(car.paint,INK,3.5);
+  rr(-23,-33,46,30,10); fillStroke(SKY,INK,3);          // windshield
+  rr(-23, 8,46,26,9);   fillStroke(shade(car.paint,-14),INK,3); // trunk panel
+  // driver leaning out toward the window
+  ctx.save(); ctx.translate(22,-14); ctx.scale(0.62,0.62);
+  drawAnimal(car.species,car.color,0,0,17,car.emote>0?"happy":"normal",{walk:0,dir:1});
+  ctx.restore();
+  [-1,1].forEach(s=>{ circle(s*19,-44,5); fillStroke(BUTTER,INK,2.4); });
+  ctx.restore();
+
+  if(car.state==="ordering"||car.state==="waiting") orderBubble(car,x-4,y-72);
+  if(car.state==="ordering"){
+    const p=clamp(car.patience/car.patienceMax,0,1);
+    ctx.save(); ctx.translate(x,y+52);
+    rr(-20,-4,40,8,4); fillStroke(CREAM,INK,2.5);
+    rr(-18,-2.3,36*p,4.6,2.3);
+    ctx.fillStyle=p>0.5?MINT_D:p>0.22?BUTTER_D:BLUSH_D; ctx.fill();
+    ctx.restore();
+  }
+  if(car.emote>0) heart(x+26,y-56,clamp(car.emote,0,1));
+}
+
+function drawNight(){
+  const a = rt.phase==="summary" ? 0.6 : clamp(rt.nightT/1.1,0,1)*0.6;
+  ctx.fillStyle="rgba(74,64,110,"+a+")"; ctx.fillRect(0,0,W,H);
+  const k=clamp(a/0.6,0,1);
+  ctx.save(); ctx.globalAlpha=k;
+  circle(W-100,80,34); fillStroke("#ffeec9",INK,4);
+  ctx.fillStyle="rgba(74,64,110,1)"; circle(W-114,68,28); ctx.fill();
+  ctx.fillStyle="#fff";
+  for(let i=0;i<26;i++){
+    const sx=(i*137)%W, sy=(i*89)%(H*0.6);
+    ctx.globalAlpha=k*(0.5+0.5*Math.sin(rt.tGlobal*3+i));
+    circle(sx,sy,2); ctx.fill();
+  }
+  ctx.globalAlpha=k;
+  ctx.fillStyle="#fff"; ctx.font="900 40px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("Closing time…",W/2,H/2);
+  ctx.font="800 20px "+FONT;
+  ctx.fillText("Counting the Cat Dollars 🪙",W/2,H/2+42);
+  ctx.restore();
+}
+
+/* ============================================================
+   SECTION 10 — INPUT
+   ============================================================ */
+function typing(){
+  const a=document.activeElement;
+  return a && (a.tagName==="INPUT"||a.tagName==="TEXTAREA");
+}
+const MOVE_CODES=["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","KeyW","KeyA","KeyS","KeyD"];
+window.addEventListener("keydown",e=>{
+  if(typing()) return;
+  if(MOVE_CODES.includes(e.code)){ keys[e.code]=true; e.preventDefault(); }
+});
+window.addEventListener("keyup",e=>{ if(MOVE_CODES.includes(e.code)) keys[e.code]=false; });
+window.addEventListener("blur",()=>{ for(const k in keys) keys[k]=false; touch.active=false; });
+
+function toWorld(ev){
+  const r=cv.getBoundingClientRect();
+  const sx=(ev.clientX-r.left)*(W/r.width), sy=(ev.clientY-r.top)*(H/r.height);
+  return { x:(sx-layout.offX)/layout.zoom, y:(sy-layout.offY)/layout.zoom };
+}
+cv.addEventListener("pointerdown",ev=>{
+  if(!rt||rt.phase!=="playing") return;
+  ev.preventDefault();
+  // Register the touch FIRST. Pointer capture is only a nicety (it keeps the
+  // finger tracked past the canvas edge) and it can throw — if it ever did
+  // before this line, steering would break completely and the game would be
+  // unplayable on a touch device.
+  const p=toWorld(ev); touch.active=true; touch.x=p.x; touch.y=p.y;
+  try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
+},{passive:false});
+cv.addEventListener("pointermove",ev=>{
+  if(!touch.active) return;
+  ev.preventDefault();
+  const p=toWorld(ev); touch.x=p.x; touch.y=p.y;
+},{passive:false});
+["pointerup","pointercancel","pointerleave"].forEach(t=>
+  cv.addEventListener(t,()=>{ touch.active=false; }));
+
+let tipTimer=null;
+function showTip(msg){
+  const el=document.getElementById("tipbar");
+  el.textContent=msg; el.classList.add("show");
+  clearTimeout(tipTimer); tipTimer=setTimeout(()=>el.classList.remove("show"),2600);
+}
+
+/* ============================================================
+   SECTION 11 — UI
+   ============================================================ */
+function openModal(id){ document.getElementById(id).classList.add("show"); }
+function closeModal(id){ document.getElementById(id).classList.remove("show"); }
+document.querySelectorAll("[data-close]").forEach(b=>
+  b.addEventListener("click",()=>b.closest(".overlay").classList.remove("show")));
+
+function updateHUD(){
+  document.getElementById("hudName").textContent=game.name;
+  document.getElementById("hudMoney").textContent=money(game.money);
+  document.getElementById("hudDay").textContent=game.day;
+  const frac=rt?1-clamp(rt.t/dayLength(),0,1):0;
+  const mins=dayHours()*60*frac;
+  const h=openHour()+Math.floor(mins/60), m=Math.floor(mins%60/5)*5;
+  const hh=((h+11)%12)+1, ap=(h%24)>=12?"pm":"am";
+  document.getElementById("hudClock").textContent=hh+":"+String(m).padStart(2,"0")+ap;
+}
+
+function itemSVG(item,size){
+  const s=size||40;
+  if(item==="burger") return `<svg viewBox="0 0 40 40" width="${s}" height="${s}"><g stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"><path d="M7 18c0-7 6-11 13-11s13 4 13 11z" fill="${PEACH}"/><path d="M5 18h30l-3 5H8z" fill="${BUTTER}"/><rect x="7" y="22" width="26" height="6" rx="3" fill="#c08d6c"/><path d="M7 28c0 5 6 7 13 7s13-2 13-7z" fill="#f3b985"/></g><g fill="#fff6e4"><ellipse cx="14" cy="12" rx="2" ry="1.3"/><ellipse cx="20" cy="10" rx="2" ry="1.3"/><ellipse cx="26" cy="12" rx="2" ry="1.3"/></g></svg>`;
+  if(item==="fries") return `<svg viewBox="0 0 40 40" width="${s}" height="${s}"><g stroke="${INK}" stroke-width="2.4" stroke-linejoin="round"><rect x="9" y="6" width="5" height="16" rx="2" fill="${BUTTER}"/><rect x="15" y="3" width="5" height="19" rx="2" fill="${BUTTER}"/><rect x="21" y="5" width="5" height="17" rx="2" fill="${BUTTER}"/><rect x="26" y="9" width="5" height="13" rx="2" fill="${BUTTER}"/><path d="M7 19h26l-4 17H11z" fill="${BLUSH}"/></g><rect x="14" y="25" width="12" height="4" rx="2" fill="${CREAM}"/></svg>`;
+  if(item==="shake") return `<svg viewBox="0 0 40 40" width="${s}" height="${s}"><g stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"><path d="M23 10l4-8" stroke-width="3"/><path d="M11 14h18l-3 23H14z" fill="#f9c9d8"/><circle cx="15" cy="11" r="4.6" fill="${CREAM}"/><circle cx="24" cy="10" r="4.2" fill="${CREAM}"/><circle cx="20" cy="6" r="3.6" fill="${CREAM}"/><circle cx="20" cy="2.6" r="2.6" fill="#f28ea8"/></g><rect x="13" y="26" width="14" height="3.4" fill="${CREAM}"/></svg>`;
+  return `<svg viewBox="0 0 40 40" width="${s}" height="${s}"><g stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"><path d="M25 6l5-3" stroke-width="3"/><path d="M10 12h20l-3 24H13z" fill="${CREAM}"/><rect x="8" y="7" width="24" height="6" rx="3" fill="${BLUSH}"/><path d="M11.4 20h17.2l-.9 6H12.3z" fill="${BLUSH}" stroke="none"/></g></svg>`;
+}
+function equipSVG(kind,size){
+  const s=size||52, wrap=i=>`<svg viewBox="0 0 52 52" width="${s}" height="${s}">${i}</svg>`;
+  if(kind==="grill") return wrap(`<g stroke="${INK}" stroke-width="3" stroke-linejoin="round"><rect x="6" y="14" width="40" height="26" rx="7" fill="#cfc6d2"/><rect x="11" y="19" width="30" height="16" rx="5" fill="#b3a8bb"/></g><g stroke="#9a8ea3" stroke-width="2.4"><path d="M14 24h24M14 30h24"/></g><circle cx="26" cy="27" r="5" fill="#c08d6c" stroke="${INK}" stroke-width="2.4"/>`);
+  if(kind==="fryer") return wrap(`<g stroke="${INK}" stroke-width="3" stroke-linejoin="round"><rect x="6" y="14" width="40" height="26" rx="7" fill="#e6ded6"/><rect x="11" y="19" width="30" height="16" rx="5" fill="${BUTTER}"/><rect x="17" y="21" width="18" height="12" rx="4" fill="#cdc4cf"/></g>`);
+  if(kind==="soda") return wrap(`<g stroke="${INK}" stroke-width="3" stroke-linejoin="round"><rect x="9" y="8" width="34" height="36" rx="7" fill="${CREAM}"/><rect x="14" y="13" width="24" height="10" rx="4" fill="${SKY}"/><rect x="19" y="29" width="14" height="11" rx="4" fill="#ded6e2"/></g>`);
+  if(kind==="shake") return wrap(`<g stroke="${INK}" stroke-width="3" stroke-linejoin="round"><rect x="9" y="8" width="34" height="36" rx="7" fill="${LAV}"/><rect x="14" y="12" width="24" height="9" rx="4" fill="${CREAM}"/><path d="M26 21v5"/><path d="M18 26h16l-2 14H20z" fill="#dcd6e8"/></g>`);
+  if(kind==="table") return wrap(`<g stroke="${INK}" stroke-width="3" stroke-linejoin="round"><rect x="3" y="20" width="11" height="11" rx="4" fill="${BUTTER}"/><rect x="38" y="20" width="11" height="11" rx="4" fill="${BUTTER}"/><circle cx="26" cy="26" r="15" fill="${CREAM}"/><circle cx="26" cy="26" r="8" fill="${BLUSH}"/></g>`);
+  if(kind==="checkout") return wrap(`<g stroke="${INK}" stroke-width="3" stroke-linejoin="round"><rect x="5" y="18" width="42" height="20" rx="6" fill="${PEACH}"/><rect x="5" y="18" width="42" height="7" rx="3" fill="${BUTTER}"/><rect x="30" y="26" width="12" height="10" rx="3" fill="${CREAM}"/></g>`);
+  if(kind==="drivethru") return wrap(`<g stroke="${INK}" stroke-width="3" stroke-linejoin="round"><rect x="3" y="10" width="18" height="34" rx="5" fill="${ASPHALT}"/><rect x="25" y="14" width="24" height="26" rx="6" fill="${BLUSH}"/><rect x="23" y="20" width="7" height="14" rx="3" fill="${SKY}"/><rect x="6" y="24" width="12" height="17" rx="5" fill="${SKY}"/></g>`);
+  return wrap(`<circle cx="26" cy="26" r="18" fill="${PEACH}" stroke="${INK}" stroke-width="3"/>`);
+}
+function animalSVG(sp,color,size,gender){
+  const s=size||46, d=shade(color,-22), pink="#f3a0b4";
+  const bow = gender==="girl"
+    ? `<g stroke="${INK}" stroke-width="2.4" stroke-linejoin="round" transform="translate(8,10)">
+         <path d="M0 0 L-7 -4 L-7 4 Z" fill="${BLUSH}"/>
+         <path d="M0 0 L7 -4 L7 4 Z" fill="${BLUSH}"/>
+         <circle cx="0" cy="0" r="2.6" fill="${BLUSH_D}"/></g>`
+    : "";
+  let ears;
+  if(sp==="cat") ears=`<path d="M13 15 L9 2 L23 9 Z" fill="${color}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M35 15 L39 2 L25 9 Z" fill="${color}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+  else if(sp==="bunny") ears=`<ellipse cx="17" cy="7" rx="5" ry="12" fill="${color}" stroke="${INK}" stroke-width="3"/><ellipse cx="31" cy="7" rx="5" ry="12" fill="${color}" stroke="${INK}" stroke-width="3"/><ellipse cx="17" cy="7" rx="2.2" ry="8" fill="${pink}"/><ellipse cx="31" cy="7" rx="2.2" ry="8" fill="${pink}"/>`;
+  else if(sp==="dog") ears=`<path d="M14 13 q10 1 9 13 q-1 8 -7 7 q-5 -1 -5 -10 z" fill="${d}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M34 13 q-10 1 -9 13 q1 8 7 7 q5 -1 5 -10 z" fill="${d}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+  else ears=`<circle cx="12" cy="12" r="7" fill="${d}" stroke="${INK}" stroke-width="3"/><circle cx="36" cy="12" r="7" fill="${d}" stroke="${INK}" stroke-width="3"/>`;
+  const face = sp==="dog"
+    ? `<ellipse cx="24" cy="33" rx="8.5" ry="6.5" fill="${shade(color,16)}" stroke="${INK}" stroke-width="2.6"/>
+       <ellipse cx="24" cy="30" rx="3.6" ry="2.7" fill="#4a3a36"/>
+       <path d="M24 33 v2.4 M24 35.4 q-2.6 2.6 -4.6 .6 M24 35.4 q2.6 2.6 4.6 .6" stroke="${INK}" stroke-width="2" fill="none" stroke-linecap="round"/>`
+    : `<ellipse cx="24" cy="32" rx="7" ry="4.4" fill="${shade(color,9)}"/>
+       <path d="M22 29.5 h4 L24 32 Z" fill="${pink}"/>
+       <path d="M24 32 q-2.4 3 -4.6 1 M24 32 q2.4 3 4.6 1" stroke="${INK}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 48 48" width="${s}" height="${s}">${ears}
+    <circle cx="24" cy="26" r="16" fill="${color}" stroke="${INK}" stroke-width="3"/>
+    ${face}
+    <ellipse cx="18" cy="23" rx="3.6" ry="4.2" fill="#fffdfa" stroke="${INK}" stroke-width="2"/>
+    <ellipse cx="30" cy="23" rx="3.6" ry="4.2" fill="#fffdfa" stroke="${INK}" stroke-width="2"/>
+    <circle cx="18.4" cy="23.6" r="2.2" fill="#4a3a36"/><circle cx="30.4" cy="23.6" r="2.2" fill="#4a3a36"/>
+    <circle cx="17.6" cy="22.6" r="1" fill="#fff"/><circle cx="29.6" cy="22.6" r="1" fill="#fff"/>
+    <ellipse cx="12" cy="29" rx="3.2" ry="2" fill="${pink}" opacity=".55"/>
+    <ellipse cx="36" cy="29" rx="3.2" ry="2" fill="${pink}" opacity=".55"/>
+    ${bow}
+  </svg>`;
+}
+
+/* ---- prices ---- */
+function buildPrices(){
+  const box=document.getElementById("priceList"); box.innerHTML="";
+  ITEM_KEYS.forEach(k=>{
+    const cfg=ITEMS[k];
+    const row=document.createElement("div"); row.className="price-row";
+    if(!itemAvailable(k)){
+      row.style.opacity=".72";
+      row.innerHTML=`
+        <div class="price-head"><span class="ico">${itemSVG(k,44)}</span>
+          <span class="nm">${cfg.name} 🔒</span></div>
+        <p class="muted" style="margin:0;">Buy a ${cfg.name==="Milkshake"?"Milkshake Machine":"machine"} in the Shop to put ${cfg.name} on the menu.</p>`;
+      box.appendChild(row);
+      return;
+    }
+    row.innerHTML=`
+      <div class="price-head"><span class="ico">${itemSVG(k,44)}</span><span class="nm">${cfg.name}</span></div>
+      <div class="stepper">
+        <button class="round" data-dec aria-label="cheaper">−</button>
+        <div class="val" id="pv-${k}">${money(game.prices[k])}</div>
+        <button class="round" data-inc aria-label="pricier">+</button>
+      </div>
+      <input type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${game.prices[k]}" id="pr-${k}" />
+      <div class="demand">
+        <div class="bar"><div class="fill" id="pf-${k}"></div></div>
+        <span class="tag" id="pt-${k}"></span>
+        <div class="muted" id="pd-${k}"></div>
+      </div>`;
+    box.appendChild(row);
+    const range=row.querySelector("#pr-"+k);
+    const setP=v=>{
+      game.prices[k]=clamp(Math.round(v/cfg.step)*cfg.step,cfg.min,cfg.max);
+      range.value=game.prices[k]; refreshPriceRow(k); save();
+    };
+    row.querySelector("[data-dec]").addEventListener("click",()=>setP(game.prices[k]-cfg.step));
+    row.querySelector("[data-inc]").addEventListener("click",()=>setP(game.prices[k]+cfg.step));
+    range.addEventListener("input",e=>setP(parseFloat(e.target.value)));
+    refreshPriceRow(k);
+  });
+}
+function refreshPriceRow(k){
+  const d=demandProb(k), lab=demandLabel(k), v=document.getElementById("pv-"+k);
+  if(!v) return;
+  v.textContent=money(game.prices[k]);
+  document.getElementById("pf-"+k).style.width=Math.round(d*100)+"%";
+  const t=document.getElementById("pt-"+k); t.textContent=lab.txt; t.className="tag "+lab.cls;
+  document.getElementById("pd-"+k).textContent =
+    d>=0.70?"Lots of animals will order this!" :
+    d>=0.35?"About half your customers will order this." :
+            "Only a few animals will pay this much.";
+}
+
+/* ---- shop ---- */
+const SHOP_ITEMS=[
+  {key:"table",    name:"Table",           desc:"More tables = more animals inside at once = more Cat Dollars."},
+  {key:"grill",    name:"Grill",           desc:"Cooks cheeseburgers. Another grill means two burgers at once."},
+  {key:"fryer",    name:"Fryer",           desc:"Cooks fries. Add more when the fry line gets long."},
+  {key:"soda",     name:"Soda Machine",    desc:"Pours sodas — the fastest item on the menu."},
+  {key:"shake",    name:"Milkshake Machine",desc:"Unlocks Milkshakes! They take the longest to make but sell for the most."},
+  {key:"checkout", name:"Pick-Up Counter", desc:"Holds finished food. More counters means more food can wait at once."},
+  {key:"drivethru",name:"Drive-Thru",      desc:"Cars roll up all day for food to go — and they pay a little extra. Buy once, no table needed!",max:1},
+];
+function buildShop(){
+  document.getElementById("shopMoney").textContent=money(game.money);
+  const box=document.getElementById("shopList"); box.innerHTML="";
+  SHOP_ITEMS.forEach(it=>{
+    const cost=EQUIP_PRICES[it.key], owned=game.equip[it.key];
+    const maxed=it.max && owned>=it.max;
+    const el=document.createElement("div"); el.className="shop-item";
+    el.innerHTML=`
+      <span class="ico">${equipSVG(it.key,52)}</span>
+      <span class="info">
+        <span class="t">${it.name}<span class="owned">${maxed?"owned":"×"+owned}</span></span>
+        <span class="d">${it.desc}</span>
+      </span>
+      <button class="btn ${!maxed&&game.money>=cost?"mint":""} small">${maxed?"✓":money(cost)}</button>`;
+    const btn=el.querySelector("button");
+    btn.disabled = maxed || game.money<cost;
+    btn.addEventListener("click",()=>buy(it.key));
+    box.appendChild(el);
+  });
+}
+function buy(key){
+  const cost=EQUIP_PRICES[key], item=SHOP_ITEMS.find(s=>s.key===key);
+  if(game.money<cost) return;
+  if(item.max && game.equip[key]>=item.max) return;
+  game.money-=cost; game.equip[key]++;
+  syncStations(); buildShop(); updateHUD(); save();
+  showTip(key==="drivethru" ? "Drive-thru open! Cars will start rolling up 🚗"
+                            : "Bought a "+item.name+"! 🎉");
+}
+
+/* ---- staff ---- */
+let pickedRole="grill";
+function buildStaff(){
+  document.getElementById("staffMoney").textContent=money(game.money);
+  document.getElementById("hireCost").textContent=money(EQUIP_PRICES.employee);
+
+  const list=document.getElementById("staffList"); list.innerHTML="";
+  if(!game.employees.length){
+    list.innerHTML=`<p class="muted">No crew yet! Right now you're doing everything yourself. Hire a cook to run a machine, or a waiter to carry food out to your customers.</p>`;
+  }
+  game.employees.forEach(e=>{
+    const el=document.createElement("div"); el.className="staff-item";
+    el.style.cursor="pointer";
+    const star=isStar(e)?" 👑":"";
+    const trophies=e.awards>0?`<span class="owned">🏆 ${e.awards}</span>`:"";
+    el.innerHTML=`<span class="av">${animalSVG(e.species,e.color,46,e.gender)}</span>
+      <span class="info"><div class="nm">${escapeHTML(e.name)}${star}</div>
+      <div class="st">${ROLES[e.role].emoji} ${ROLES[e.role].name} ${trophies}</div></span>
+      <span style="font-size:20px;font-weight:900;color:var(--ink-soft);">›</span>`;
+    el.addEventListener("click",()=>openProfile(e.id));
+    list.appendChild(el);
+  });
+
+  const chips=document.getElementById("stationPick"); chips.innerHTML="";
+  Object.keys(ROLES).forEach(k=>{
+    const free=openSlots(k);
+    const b=document.createElement("button");
+    b.className="chip"+(pickedRole===k?" sel":"");
+    b.innerHTML=`${ROLES[k].emoji} ${ROLES[k].name} <span class="owned">${slotLabel(k)}</span>`;
+    b.disabled=free<=0;
+    b.addEventListener("click",()=>{ pickedRole=k; buildStaff(); });
+    chips.appendChild(b);
+  });
+
+  const nameInp=document.getElementById("inpEmpName");
+  if(!nameInp.value) nameInp.placeholder=pick(NAMES);
+
+  const free=openSlots(pickedRole), afford=game.money>=EQUIP_PRICES.employee;
+  document.getElementById("btnHire").disabled = free<=0 || !afford;
+  document.getElementById("hireNote").textContent =
+    free<=0 ? noSlotReason(pickedRole)
+    : !afford ? "You need "+money(EQUIP_PRICES.employee)+" to hire a helper."
+    : ROLES[pickedRole].kind==="waiter"
+        ? "Waiters carry food from the counter to tables and the drive-thru."
+    : ROLES[pickedRole].kind==="drive"
+        ? "Drive-thru staff only serve cars, so your waiters can stay on the tables."
+        : "One cook runs one machine, and cooks faster than you do.";
+}
+function openSlots(role){
+  const kind=ROLES[role].kind;
+  if(kind==="waiter") return MAX_WAITERS-roleCount("waiter");
+  if(kind==="drive")  return game.equip.drivethru ? MAX_DRIVE_STAFF-roleCount("drivethru") : 0;
+  return stationCount(role)-roleCount(role);
+}
+function slotLabel(role){
+  const kind=ROLES[role].kind;
+  if(kind==="waiter") return roleCount("waiter")+" hired";
+  if(kind==="drive")  return game.equip.drivethru ? roleCount("drivethru")+" hired" : "no drive-thru";
+  return openSlots(role)+" open";
+}
+function noSlotReason(role){
+  const kind=ROLES[role].kind;
+  if(kind==="waiter") return "That's the most waiters one restaurant can handle!";
+  if(kind==="drive")  return game.equip.drivethru
+      ? "You already have a full drive-thru crew."
+      : "Buy a Drive-Thru in the Shop before hiring someone to work it.";
+  return "Every "+ROLES[role].name+" machine already has someone — buy another in the Shop first.";
+}
+
+/* ---- employee profile ---- */
+let profileId=null;
+function openProfile(id){
+  const e=game.employees.find(x=>x.id===id); if(!e) return;
+  profileId=id;
+  document.getElementById("profTitle").firstChild.nodeValue=escapeHTML(e.name)+" ";
+  document.getElementById("profPic").innerHTML=animalSVG(e.species,e.color,96,e.gender);
+  document.getElementById("profRole").textContent=ROLES[e.role].emoji+" "+ROLES[e.role].name;
+  document.getElementById("profStar").textContent = isStar(e)
+    ? "👑 Employee of the Month — working faster until day "+game.eotm.untilDay+"!"
+    : "Not currently Employee of the Month.";
+  document.getElementById("profAwards").textContent =
+    e.awards===0 ? "🏆 Never won Employee of the Month yet"
+                 : "🏆 Won Employee of the Month "+e.awards+(e.awards===1?" time":" times");
+  document.getElementById("profName").value=e.name;
+  profileGender=e.gender;
+  buildProfileGender();
+  buildProfileJobs();
+  openModal("ovProfile");
+}
+let profileRole=null, profileGender=null;
+
+function buildProfileGender(){
+  const e=game.employees.find(x=>x.id===profileId); if(!e) return;
+  if(profileGender===null) profileGender=e.gender;
+  const box=document.getElementById("profGender"); box.innerHTML="";
+  [["girl","Girl 🎀"],["boy","Boy"]].forEach(([g,label])=>{
+    const b=document.createElement("button");
+    b.className="chip"+(profileGender===g?" sel":"");
+    b.textContent=label;
+    b.addEventListener("click",()=>{
+      profileGender=g;
+      buildProfileGender();
+      // live preview on the portrait so the bow change is obvious
+      document.getElementById("profPic").innerHTML=animalSVG(e.species,e.color,96,g);
+    });
+    box.appendChild(b);
+  });
+}
+function buildProfileJobs(){
+  const e=game.employees.find(x=>x.id===profileId); if(!e) return;
+  if(profileRole===null) profileRole=e.role;
+  const box=document.getElementById("profJobs"); box.innerHTML="";
+  Object.keys(ROLES).forEach(k=>{
+    const isCurrent = k===e.role;
+    const room = isCurrent || openSlots(k)>0;
+    const b=document.createElement("button");
+    b.className="chip"+(profileRole===k?" sel":"");
+    b.innerHTML=`${ROLES[k].emoji} ${ROLES[k].name}${isCurrent?' <span class="owned">now</span>':""}`;
+    b.disabled=!room;
+    b.addEventListener("click",()=>{ profileRole=k; buildProfileJobs(); });
+    box.appendChild(b);
+  });
+  document.getElementById("profNote").textContent =
+    profileRole===e.role ? "Pick a different job to move "+e.name+" to a new station."
+                         : "Moving "+e.name+" to "+ROLES[profileRole].name+".";
+}
+function saveProfile(){
+  const e=game.employees.find(x=>x.id===profileId); if(!e) return;
+  const nm=document.getElementById("profName").value.trim().slice(0,14);
+  if(nm) e.name=nm;
+  if(profileGender==="girl"||profileGender==="boy") e.gender=profileGender;
+  if(profileRole && profileRole!==e.role && (openSlots(profileRole)>0)) e.role=profileRole;
+  profileRole=null; profileGender=null; profileId=null;
+  closeModal("ovProfile");
+  syncStations(); buildStaff(); save();
+  showTip(e.name+" is now a "+ROLES[e.role].name+"!");
+}
+
+/* ---- Employee of the Month ---- */
+function openAward(){
+  const list=document.getElementById("awardList"); list.innerHTML="";
+  document.getElementById("awardBlurb").textContent =
+    "You've finished day "+game.day+"! Pick one member of your crew to be Employee of the Month.";
+  game.employees.forEach(e=>{
+    const el=document.createElement("div"); el.className="staff-item"; el.style.cursor="pointer";
+    el.innerHTML=`<span class="av">${animalSVG(e.species,e.color,46,e.gender)}</span>
+      <span class="info"><div class="nm">${escapeHTML(e.name)}</div>
+      <div class="st">${ROLES[e.role].emoji} ${ROLES[e.role].name}${e.awards?` · 🏆 ${e.awards}`:""}</div></span>
+      <span class="btn butter small">Pick 🏆</span>`;
+    el.addEventListener("click",()=>giveAward(e.id));
+    list.appendChild(el);
+  });
+  openModal("ovAward");
+}
+function giveAward(id){
+  const e=game.employees.find(x=>x.id===id); if(!e) return;
+  e.awards=(e.awards||0)+1;
+  game.eotm={ id:e.id, untilDay:game.day+AWARD_EVERY };
+  game.awardDue=false;
+  closeModal("ovAward");
+  save(); buildStaff();
+  showTip("🏆 "+e.name+" is Employee of the Month!");
+  startNextDay();
+}
+function hire(){
+  if(openSlots(pickedRole)<=0 || game.money<EQUIP_PRICES.employee) return;
+  const inp=document.getElementById("inpEmpName");
+  const name=(inp.value.trim()||inp.placeholder||pick(NAMES)).slice(0,14);
+  game.money-=EQUIP_PRICES.employee;
+  game.employees.push({ id:uid(), name, species:pick(SPECIES), color:pick(FUR),
+                        gender:pick(GENDERS), role:pickedRole, awards:0 });
+  inp.value="";
+  syncStations(); buildStaff(); updateHUD(); save();
+  showTip(name+" joined the crew! 🎉");
+}
+function escapeHTML(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ---- settings ---- */
+function setHours(oh,ch){
+  oh=clamp(Math.round(oh),OPEN_MIN,OPEN_MAX);
+  ch=clamp(Math.round(ch),CLOSE_MIN,CLOSE_MAX);
+  if(ch-oh<MIN_HOURS || ch-oh>MAX_HOURS) return false;
+  const oldLen=dayLength();
+  game.openHour=oh; game.closeHour=ch;
+  // keep the clock where it was in the day rather than jumping
+  if(rt && rt.phase==="playing" && oldLen>0){
+    rt.t = clamp(dayLength()*(rt.t/oldLen), 0.5, dayLength());
+  }
+  buildSettings(); updateHUD(); save();
+  return true;
+}
+function buildSettings(){
+  document.getElementById("openVal").textContent  = hourLabel(openHour());
+  document.getElementById("closeVal").textContent = hourLabel(closeHour());
+  const h=dayHours(), secs=dayLength();
+  const mm=Math.floor(secs/60), ss=Math.round(secs%60);
+  document.getElementById("hoursSummary").textContent =
+    h+" hours  ·  "+(mm?mm+"m ":"")+(ss?ss+"s":"")+" to play";
+  document.getElementById("openDown").disabled  = !canSet(openHour()-1, closeHour());
+  document.getElementById("openUp").disabled    = !canSet(openHour()+1, closeHour());
+  document.getElementById("closeDown").disabled = !canSet(openHour(), closeHour()-1);
+  document.getElementById("closeUp").disabled   = !canSet(openHour(), closeHour()+1);
+
+  const box=document.getElementById("musicChips"); box.innerHTML="";
+  [[true,"🔊 Music on"],[false,"🔇 Music off"]].forEach(([v,label])=>{
+    const b=document.createElement("button");
+    b.className="chip"+(Music.on===v?" sel":"");
+    b.textContent=label;
+    b.addEventListener("click",()=>{ Music.setOn(v); buildSettings(); });
+    box.appendChild(b);
+  });
+}
+function canSet(oh,ch){
+  if(oh<OPEN_MIN||oh>OPEN_MAX||ch<CLOSE_MIN||ch>CLOSE_MAX) return false;
+  const span=ch-oh;
+  return span>=MIN_HOURS && span<=MAX_HOURS;
+}
+document.getElementById("openDown").addEventListener("click", ()=>setHours(openHour()-1,closeHour()));
+document.getElementById("openUp").addEventListener("click",   ()=>setHours(openHour()+1,closeHour()));
+document.getElementById("closeDown").addEventListener("click",()=>setHours(openHour(),closeHour()-1));
+document.getElementById("closeUp").addEventListener("click",  ()=>setHours(openHour(),closeHour()+1));
+
+/* ---- buttons ---- */
+document.getElementById("btnPrices").addEventListener("click",()=>{ buildPrices(); openModal("ovPrices"); });
+document.getElementById("btnShop").addEventListener("click",  ()=>{ buildShop();   openModal("ovShop"); });
+document.getElementById("btnStaff").addEventListener("click", ()=>{ buildStaff();  openModal("ovStaff"); });
+document.getElementById("btnInfo").addEventListener("click",  ()=> openModal("ovInfo"));
+document.getElementById("btnSettings").addEventListener("click",()=>{ buildSettings(); openModal("ovSettings"); });
+document.getElementById("btnHire").addEventListener("click", hire);
+document.getElementById("btnProfSave").addEventListener("click", saveProfile);
+document.getElementById("ovProfile").addEventListener("click",e=>{
+  if(e.target.id==="ovProfile"||e.target.hasAttribute("data-close")){
+    profileRole=null; profileGender=null; profileId=null;
+  }
+});
+document.getElementById("btnNextDay").addEventListener("click", nextDay);
+document.getElementById("btnSumPrices").addEventListener("click",()=>{ buildPrices(); openModal("ovPrices"); });
+document.getElementById("btnSumShop").addEventListener("click",  ()=>{ buildShop();   openModal("ovShop"); });
+document.getElementById("btnReset").addEventListener("click",()=>{ closeModal("ovSettings"); openModal("ovReset"); });
+document.getElementById("btnResetNo").addEventListener("click",()=>closeModal("ovReset"));
+document.getElementById("btnResetYes").addEventListener("click",()=>{
+  try{ localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); }catch(e){}
+  closeModal("ovReset"); closeModal("ovSummary");
+  game=null; rt=null; startNewGameFlow();
+});
+
+function startNewGameFlow(){
+  const inp=document.getElementById("inpName");
+  inp.value=""; inp.placeholder=pick(RESTO_NAMES);
+  const sug=document.getElementById("nameSuggest"); sug.innerHTML="";
+  RESTO_NAMES.slice(0,4).forEach(n=>{
+    const b=document.createElement("button"); b.className="chip"; b.textContent=n;
+    b.addEventListener("click",()=>{ inp.value=n; });
+    sug.appendChild(b);
+  });
+  openModal("ovNew");
+}
+document.getElementById("btnStartGame").addEventListener("click",()=>{
+  const inp=document.getElementById("inpName");
+  game=freshGame((inp.value.trim()||inp.placeholder||"Animal Grill").slice(0,24));
+  game.catColor=pick(["#f7c08a","#ded7d0","#cbb08c","#f6e3c8","#b9c6d4"]);
+  rt=freshRuntime(); syncStations();
+  closeModal("ovNew"); updateHUD(); save(); startDay();
+  showTip("Use the arrow keys — or drag on the floor — to walk!");
+});
+
+/* ============================================================
+   SECTION 12 — MUSIC
+   A little chiptune band built from oscillators — no audio files, so it
+   works offline and inside the Artifact sandbox. Browsers block audio until
+   the player interacts, so the context is created on the first tap/keypress.
+   ============================================================ */
+const MUSIC_KEY = "animalgrill.music.v1";
+const mid2f = m => 440*Math.pow(2,(m-69)/12);
+
+/* 8 bars x 8 eighth-notes. Bright, bouncy, C major: C · G · Am · F */
+const CHORD_ROOT = [36,43,45,41];                       // C2 G2 A2 F2
+const MELODY = [
+  76,79,76,72, 74,76,79,null,      // C
+  74,71,74,79, 71,74,71,null,      // G
+  69,72,76,72, 69,72,76,null,      // Am
+  65,69,72,69, 67,69,72,null,      // F
+  79,81,79,76, 74,76,79,null,      // C  (second half lifts a little)
+  74,79,74,71, 74,79,83,null,      // G
+  81,79,76,72, 76,79,81,null,      // Am
+  77,76,74,72, 71,72,74,null,      // F
+];
+const STEPS = MELODY.length;
+
+const Music = {
+  ctx:null, bus:null, master:null, noiseBuf:null,
+  on:true, running:false, timer:null,
+  step:0, nextTime:0, mood:"day", tempo:124,
+
+  load(){
+    try{ this.on = localStorage.getItem(MUSIC_KEY) !== "off"; }catch(e){ this.on = true; }
+  },
+  build(){
+    if(this.ctx) return true;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return false;
+    try{ this.ctx = new AC(); }catch(e){ return false; }
+    const ctx=this.ctx;
+
+    this.master = ctx.createGain();
+    this.master.gain.value = this.on ? 0.16 : 0;
+    const soft = ctx.createBiquadFilter();          // take the edge off the squares
+    soft.type="lowpass"; soft.frequency.value=3200; soft.Q.value=0.4;
+    this.bus = ctx.createGain(); this.bus.gain.value=1;
+    this.bus.connect(soft); soft.connect(this.master); this.master.connect(ctx.destination);
+
+    const n = ctx.sampleRate*0.4;                    // reusable noise for the drums
+    this.noiseBuf = ctx.createBuffer(1,n,ctx.sampleRate);
+    const d = this.noiseBuf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+    return true;
+  },
+
+  tone(t,freq,dur,type,gain,detune){
+    const ctx=this.ctx, o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type; o.frequency.value=freq;
+    if(detune) o.detune.value=detune;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(gain,t+0.014);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.bus);
+    o.start(t); o.stop(t+dur+0.03);
+  },
+  hit(t,dur,gain,hp){
+    const ctx=this.ctx, s=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain();
+    s.buffer=this.noiseBuf;
+    f.type="highpass"; f.frequency.value=hp;
+    g.gain.setValueAtTime(gain,t);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(f); f.connect(g); g.connect(this.bus);
+    s.start(t); s.stop(t+dur+0.02);
+  },
+  kick(t){
+    const ctx=this.ctx, o=ctx.createOscillator(), g=ctx.createGain();
+    o.type="sine";
+    o.frequency.setValueAtTime(150,t);
+    o.frequency.exponentialRampToValueAtTime(48,t+0.11);
+    g.gain.setValueAtTime(0.42,t);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
+    o.connect(g); g.connect(this.bus);
+    o.start(t); o.stop(t+0.2);
+  },
+
+  playStep(i,t){
+    const bar=Math.floor(i/8), within=i%8, chord=CHORD_ROOT[bar%4];
+    const night = this.mood==="night";
+
+    // bass — bouncy root/fifth/third
+    const bassSeq=[0,null,7,null,0,null,4,null];
+    const b=bassSeq[within];
+    if(b!==null && (!night || within===0 || within===4))
+      this.tone(t, mid2f(chord+b), night?0.55:0.3, "triangle", night?0.30:0.38);
+
+    // melody
+    const m=MELODY[i];
+    if(m!==null && (!night || within%2===0)){
+      this.tone(t, mid2f(m), night?0.42:0.24, "square", night?0.10:0.15);
+      this.tone(t, mid2f(m+12), night?0.30:0.16, "triangle", 0.05, 6);   // sparkle
+    }
+
+    // warm chord pad underneath
+    if(within===0) this.tone(t, mid2f(chord+12), night?1.5:0.9, "sine", night?0.13:0.10);
+
+    if(night) return;                                  // drums sleep at closing time
+    this.hit(t, 0.03, within%2 ? 0.05 : 0.09, 7000);   // hats
+    if(within===0||within===4) this.kick(t);
+    if(within===4) this.hit(t, 0.10, 0.16, 1800);      // clap on the backbeat
+  },
+
+  schedule(){
+    if(!this.ctx) return;
+    const stepDur = (60/this.tempo)/2;
+    while(this.nextTime < this.ctx.currentTime + 0.14){
+      if(this.nextTime > this.ctx.currentTime - 0.05) this.playStep(this.step, this.nextTime);
+      this.nextTime += stepDur;
+      this.step = (this.step+1) % STEPS;
+    }
+  },
+
+  start(){
+    if(this.running) return;
+    if(!this.build()) return;
+    if(this.ctx.state==="suspended") this.ctx.resume();
+    this.running=true;
+    this.nextTime=this.ctx.currentTime+0.08;
+    this.timer=setInterval(()=>this.schedule(),25);
+  },
+  setMood(m){
+    if(this.mood===m) return;
+    this.mood=m;
+    this.tempo = m==="night" ? 76 : 124;
+    if(this.ctx && this.on){
+      this.master.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.master.gain.linearRampToValueAtTime(m==="night"?0.11:0.16, this.ctx.currentTime+0.6);
+    }
+  },
+  setOn(v){
+    this.on=v;
+    try{ localStorage.setItem(MUSIC_KEY, v?"on":"off"); }catch(e){}
+    if(v){
+      this.start();
+      if(this.ctx){
+        if(this.ctx.state==="suspended") this.ctx.resume();
+        this.master.gain.cancelScheduledValues(this.ctx.currentTime);
+        this.master.gain.linearRampToValueAtTime(this.mood==="night"?0.11:0.16, this.ctx.currentTime+0.25);
+      }
+    } else if(this.ctx){
+      this.master.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.master.gain.linearRampToValueAtTime(0, this.ctx.currentTime+0.2);
+    }
+    const btn=document.getElementById("btnMusic");
+    if(btn){ btn.textContent = v?"🔊":"🔇"; btn.classList.toggle("ghost",!v); btn.classList.toggle("butter",v); }
+    if(document.getElementById("ovSettings").classList.contains("show")) buildSettings();
+  },
+  toggle(){ this.setOn(!this.on); },
+  suspend(){ if(this.ctx && this.ctx.state==="running") this.ctx.suspend(); },
+  resume(){ if(this.on && this.ctx && this.ctx.state==="suspended") this.ctx.resume(); },
+};
+
+Music.load();
+document.getElementById("btnMusic").addEventListener("click",()=>Music.toggle());
+
+// Browsers won't let audio start until the player touches something.
+function unlockMusic(){ if(Music.on) Music.start(); }
+window.addEventListener("pointerdown",unlockMusic,{once:true});
+window.addEventListener("keydown",unlockMusic,{once:true});
+
+/* ============================================================
+   SECTION 13 — MAIN LOOP
+   ============================================================ */
+let last=performance.now(), hudAcc=0, saveAcc=0;
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(rt){
+    rt.tGlobal+=dt;
+    Music.setMood(rt.phase==="playing" ? "day" : "night");
+    if(rt.phase==="playing"){
+      updateDay(dt);
+      saveAcc+=dt; if(saveAcc>15){ saveAcc=0; save(); }
+    } else if(rt.phase==="night"){
+      rt.nightT+=dt;
+      if(rt.nightT>1.8) finishNight();
+    }
+    hudAcc+=dt; if(hudAcc>0.2){ hudAcc=0; updateHUD(); }
+    render();
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ============================================================
+   SECTION 14 — BOOT
+   ============================================================ */
+function boot(){
+  resize();
+  const btn=document.getElementById("btnMusic");
+  btn.textContent = Music.on?"🔊":"🔇";
+  btn.classList.toggle("ghost",!Music.on);
+  btn.classList.toggle("butter",Music.on);
+  const saved=load();
+  if(saved){
+    game=saved; rt=freshRuntime(); syncStations(); updateHUD(); startDay();
+  } else {
+    game=freshGame(); rt=freshRuntime(); syncStations(); updateHUD(); startNewGameFlow();
+  }
+  requestAnimationFrame(frame);
+}
+// registers the service worker so the game keeps working offline once added to the
+// Home Screen — requires a real http(s) origin, so this is a no-op on file:// loads
+if('serviceWorker' in navigator && location.protocol !== 'file:'
+   && document.querySelector('link[rel="manifest"]')){
+  navigator.serviceWorker.register('sw.js').catch(function(err){
+    console.warn('Service worker registration failed:', err);
+  });
+}
+
+window.addEventListener("load",resize);
+boot();
+setTimeout(resize,60);
+window.addEventListener("beforeunload",()=>{ if(game) save(); });
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){ if(game) save(); Music.suspend(); }
+  else Music.resume();
+  last=performance.now();
+});
+</script>
+</body>
+</html>

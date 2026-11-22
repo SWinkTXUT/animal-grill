@@ -18,7 +18,15 @@ the door.
 ## Things to try
 
 - Set your own prices — each menu item has its own demand, so cheap food is popular and
-  pricey food earns more per sale.
+  pricey food earns more per sale. Ingredients cost money, so what you keep is the price
+  minus the food cost.
+- Watch the **Pantry**. You buy ingredients before you cook with them, and an empty shelf
+  takes that food off the menu until you restock. Better **suppliers** make it cheaper forever.
+- Sign a **branding deal**. Animal businesses pay to put their name in your restaurant —
+  you pay a one-off fee, it runs 30 days, and it only brings extra customers if it genuinely
+  suits you. Check the fit meter first.
+- Learn who likes what: dogs love burgers, bunnies love fries, hamsters love soda and cats
+  love milkshakes — and each of them turns their nose up at something too.
 - Hire **cooks** to run machines, **waiters** to carry food to tables, and **drive-thru
   staff** to serve cars.
 - Buy a **Milkshake Machine** to unlock milkshakes, and a **Drive-Thru** for a second

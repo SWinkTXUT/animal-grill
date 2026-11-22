@@ -194,6 +194,8 @@ input[type=range]{width:100%;height:38px;accent-color:var(--blush-deep);}
     <div class="spacer"></div>
     <button class="btn butter small" id="btnPrices">💲 Prices</button>
     <button class="btn mint small" id="btnShop">🛒 Shop</button>
+    <button class="btn small" id="btnPantry" style="background:var(--peach);">🥫 Pantry</button>
+    <button class="btn small" id="btnDeals" style="background:var(--sky);">🤝 Deals</button>
     <button class="btn lav small" id="btnStaff">👥 Staff</button>
     <button class="btn ghost small" id="btnMusic" aria-label="Toggle music">🔊</button>
     <button class="btn ghost small" id="btnSettings" aria-label="Settings">⚙️</button>
@@ -264,6 +266,33 @@ input[type=range]{width:100%;height:38px;accent-color:var(--blush-deep);}
   </div>
 </div>
 
+<!-- Pantry -->
+<div class="overlay" id="ovPantry">
+  <div class="card">
+    <h2>Pantry <button class="close-x" data-close>✕</button></h2>
+    <div class="body">
+      <div class="pill money" style="margin-bottom:12px;">🪙 <span id="pantryMoney">0</span> Cat Dollars</div>
+      <p class="muted">You buy ingredients before you cook with them. If a shelf runs empty that food comes off the menu until you restock — animals just order something else.</p>
+      <div id="pantryList"></div>
+      <button class="btn mint" id="btnFillAll" style="width:100%;">Fill every shelf 🛒</button>
+    </div>
+  </div>
+</div>
+
+<!-- Branding deals -->
+<div class="overlay" id="ovDeals">
+  <div class="card">
+    <h2>Branding Deals <button class="close-x" data-close>✕</button></h2>
+    <div class="body">
+      <div class="pill money" style="margin-bottom:12px;">🪙 <span id="dealMoney">0</span> Cat Dollars</div>
+      <div id="dealActive"></div>
+      <h3 id="dealOffersTitle">Partners who want to work with you</h3>
+      <p class="muted">You pay once and the partnership runs for 30 days. A partner brings in more of their animal and pushes one thing on your menu — but you only get the extra customers if the deal actually suits your restaurant, so check the fit meter before you sign.</p>
+      <div id="dealList"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Employee profile -->
 <div class="overlay" id="ovProfile">
   <div class="card">
@@ -310,7 +339,9 @@ input[type=range]{width:100%;height:38px;accent-color:var(--blush-deep);}
     <h2 id="sumTitle">Day 1 complete! <span>🌙</span></h2>
     <div class="body">
       <div class="sum-grid">
-        <div class="sum-cell"><div class="k">Revenue today</div><div class="v" id="sRev">C$0</div></div>
+        <div class="sum-cell"><div class="k">Money taken</div><div class="v" id="sRev">C$0</div></div>
+        <div class="sum-cell"><div class="k">Food used</div><div class="v" id="sFood">C$0</div></div>
+        <div class="sum-cell big" style="background:var(--mint);"><div class="k">Profit today</div><div class="v" id="sProfit">C$0</div></div>
         <div class="sum-cell"><div class="k">Customers served</div><div class="v" id="sCust">0</div></div>
         <div class="sum-cell"><div class="k">Cars served</div><div class="v" id="sCars">0</div></div>
         <div class="sum-cell"><div class="k">Left hungry</div><div class="v" id="sLost">0</div></div>
@@ -379,6 +410,12 @@ input[type=range]{width:100%;height:38px;accent-color:var(--blush-deep);}
       <p class="muted">Cooked food appears on the <b>counter</b>. Walk past to scoop it up (you can carry 3), then walk up to a hungry animal and they'll take it. Walk to the <b>drive-thru window</b> to hand food to a car.</p>
       <h3>Get some help</h3>
       <p class="muted">A <b>cook</b> runs one machine so you don't have to — there's a cook for the grill, the fryer, the soda machine and the milkshake machine. A <b>waiter</b> carries food out to the tables, and <b>drive-thru staff</b> only serve cars so your waiters can stay on the tables. Tap any of your crew in the Staff screen to see their profile, rename them, or move them to a different job.</p>
+      <h3>Ingredients 🥫</h3>
+      <p class="muted">Food isn't free! Every burger, fry, soda and shake uses ingredients you bought in the <b>Pantry</b>. What you charge minus what the ingredients cost is your real <b>profit</b> — the Prices screen shows it for every item. If a shelf runs empty that food comes off the menu until you restock, so keep an eye on it. Better <b>suppliers</b> in the Shop make ingredients cheaper forever.</p>
+      <h3>Branding deals 🤝</h3>
+      <p class="muted">Other animal businesses will pay to put their name in your restaurant. You pay a one-off fee and the deal runs 30 days. A partner brings in more of their animal and pushes one menu item — but you only get the extra customers if the deal <b>suits you</b>: you need the machines to make what they push, a price in their band, and food the animals they bring actually like. Check the fit meter before you sign, or you'll just lose the fee.</p>
+      <h3>Who likes what 🐾</h3>
+      <p class="muted">Every animal has a favourite and something they rarely order. Dogs love burgers but skip soda, bunnies love fries but skip burgers, hamsters love soda but skip milkshakes, and cats love milkshakes but skip fries.</p>
       <h3>Milkshakes 🥤</h3>
       <p class="muted">Buy a <b>Milkshake Machine</b> in the Shop to add Milkshakes to your menu. They take the longest to make but sell for the most.</p>
       <h3>Employee of the Month 🏆</h3>
@@ -439,12 +476,65 @@ const CREAM="#fff8ef", BLUSH="#f6a9be", BLUSH_D="#e98ba6", BUTTER="#ffe39b",
       SKY="#a9d8f0", PEACH="#ffcba4", GROUT="#f4e7e1", ASPHALT="#ddd6e6";
 
 const ITEMS = {
-  burger: { name:"Cheeseburger", def:6.00, min:2.00, max:15.00, step:0.25, cook:5.0, station:"grill" },
-  fries:  { name:"Fries",        def:3.00, min:1.00, max:10.00, step:0.25, cook:4.0, station:"fryer" },
-  soda:   { name:"Soda",         def:2.00, min:1.00, max:8.00,  step:0.25, cook:2.2, station:"soda"  },
-  shake:  { name:"Milkshake",    def:5.00, min:2.00, max:12.00, step:0.25, cook:6.0, station:"shake" },
+  burger: { name:"Cheeseburger", def:6.00, min:2.00, max:15.00, step:0.25, cook:5.0, station:"grill", cost:2.00, supply:"Buns & patties" },
+  fries:  { name:"Fries",        def:3.00, min:1.00, max:10.00, step:0.25, cook:4.0, station:"fryer", cost:0.90, supply:"Potatoes & salt" },
+  soda:   { name:"Soda",         def:2.00, min:1.00, max:8.00,  step:0.25, cook:2.2, station:"soda",  cost:0.50, supply:"Syrup & cups" },
+  shake:  { name:"Milkshake",    def:5.00, min:2.00, max:12.00, step:0.25, cook:6.0, station:"shake", cost:1.75, supply:"Milk & sprinkles" },
 };
 const ITEM_KEYS = ["burger","fries","soda","shake"];
+
+/* ---- pantry ---- */
+const PACK = 10;                                   // units bought at a time
+const START_STOCK = 30;                            // opening pantry, enough for day one
+const PANTRY_MAX = 120;                            // shelf space per item
+const EMERGENCY_PACK = 5;                          // free top-up so you can never be stranded
+
+/* ---- suppliers: per-item upgrades that permanently cut ingredient cost ---- */
+const SUPPLIERS = [
+  { name:"Corner Market", mult:1.00, price:0   },
+  { name:"Farm Co-op",    mult:0.78, price:110 },
+  { name:"Wholesale Barn",mult:0.60, price:230 },
+];
+const supplierLevel = k => clamp(game.suppliers?.[k]|0, 0, SUPPLIERS.length-1);
+// rounded to whole cents so a pack of ten is exactly ten times the unit price
+const unitCost      = k => Math.round(ITEMS[k].cost * SUPPLIERS[supplierLevel(k)].mult * 100)/100;
+const packCost      = k => unitCost(k) * PACK;
+
+/* ---- species tastes: each animal has one favourite and one dislike ---- */
+const TASTE = {
+  cat:     { loves:"shake",  hates:"fries"  },
+  dog:     { loves:"burger", hates:"soda"   },
+  bunny:   { loves:"fries",  hates:"burger" },
+  hamster: { loves:"soda",   hates:"shake"  },
+};
+// A favourite is a strong lean, never a certainty — if loving an item made it
+// a guaranteed order, raising that price would stop mattering to that species.
+const LOVE_MULT = 1.35, HATE_MULT = 0.32, TASTE_CAP = 0.92;
+
+/* ---- branding partners (invented animal businesses, never real brands) ----
+   Each deal brings more of one species and pushes one menu item. Whether that
+   is worth the fee depends on the player: can their kitchen make it, is their
+   price in the partner's band, and can they serve the animals it brings.     */
+const DEAL_RUN = 30;                               // days a partnership lasts
+const PARTNERS = [
+  { id:"hydrant", name:"Hydrant Cola",        species:"dog",     item:"soda",   band:"low",  fee:150,
+    blurb:"A fizzy favourite down at the park." },
+  { id:"bigbone", name:"Big Bone BBQ",        species:"dog",     item:"burger", band:"high", fee:220,
+    blurb:"Smoky, serious, and proud of it." },
+  { id:"clover",  name:"Clover Field Farm",   species:"bunny",   item:"fries",  band:"low",  fee:140,
+    blurb:"Potatoes pulled up this morning." },
+  { id:"cloud9",  name:"Cloud Nine Creamery", species:"cat",     item:"shake",  band:"high", fee:240,
+    blurb:"Thick, dreamy and worth the wait." },
+  { id:"sunflo",  name:"Sunflower Seed Co.",  species:"hamster", item:"soda",   band:"low",  fee:130,
+    blurb:"Tiny snacks, enormous enthusiasm." },
+  { id:"golden",  name:"Golden Crunch",       species:"bunny",   item:"fries",  band:"high", fee:200,
+    blurb:"Hand-cut and twice-fried, naturally." },
+  { id:"pickles", name:"Pawsome Pickles",     species:"dog",     item:"burger", band:"low",  fee:160,
+    blurb:"The crunch every burger deserves." },
+  { id:"whisker", name:"Whisker Whip Co.",    species:"cat",     item:"shake",  band:"low",  fee:150,
+    blurb:"Swirly, silly, sprinkled on top." },
+];
+const DEAL_OFFERS = 3;                             // choices shown at a time
 
 const ROLES = {
   grill:     { name:"Grill Cook",   emoji:"🍔", kind:"station" },
@@ -500,6 +590,10 @@ function freshGame(name){
     eotm:null,                          // {id, untilDay} — Employee of the Month
     awardDue:false,
     openHour:DEF_OPEN, closeHour:DEF_CLOSE,
+    pantry:   (function(){ const o={}; ITEM_KEYS.forEach(k=>o[k]=START_STOCK); return o; })(),
+    suppliers:(function(){ const o={}; ITEM_KEYS.forEach(k=>o[k]=0); return o; })(),
+    deal:null,                          // {id, untilDay}
+    offers:[],                          // partner ids currently on the table
     catColor:"#f7c08a",
     stats:{ customers:0, cars:0, sold:blankSold() },
   };
@@ -529,7 +623,7 @@ function freshRuntime(){
     fx:[],
     player:null,
     nightT:0,
-    dayRevenue:0, dayCustomers:0, dayCars:0, dayLost:0,
+    dayRevenue:0, dayIngredients:0, dayCustomers:0, dayCars:0, dayLost:0,
     daySold:blankSold(),
   };
 }
@@ -578,6 +672,17 @@ function load(){
       g.eotm = { id:Number(d.eotm.id), untilDay:Math.max(1,Number(d.eotm.untilDay)||1) };
     }
     g.awardDue = !!d.awardDue;
+
+    // pantry, suppliers and the active partnership
+    ITEM_KEYS.forEach(k=>{
+      const n=Number(d.pantry?.[k]);
+      g.pantry[k] = isFinite(n) ? clamp(Math.floor(n),0,PANTRY_MAX) : START_STOCK;
+      g.suppliers[k] = clamp(Math.floor(Number(d.suppliers?.[k])||0), 0, SUPPLIERS.length-1);
+    });
+    if(d.deal && PARTNERS.some(p=>p.id===d.deal.id)){
+      g.deal = { id:d.deal.id, untilDay:Math.max(1,Number(d.deal.untilDay)||1) };
+    }
+    g.offers = Array.isArray(d.offers) ? d.offers.filter(id=>PARTNERS.some(p=>p.id===id)) : [];
 
     // opening hours, kept sane whatever the save says
     let oh=Math.round(Number(d.openHour)), ch=Math.round(Number(d.closeHour));
@@ -762,19 +867,36 @@ function demandLabel(item){
   if(d>=0.35) return {txt:"Fair price", cls:"fair"};
   return {txt:"Pricey", cls:"pricey"};
 }
-/** An item is only on the menu if you own a machine that can make it. */
-function itemAvailable(k){ return (game.equip[ITEMS[k].station]||0) > 0; }
+/** On the menu only if you own the machine AND have the ingredients in. */
+function itemAvailable(k){ return (game.equip[ITEMS[k].station]||0)>0 && (game.pantry[k]|0)>0; }
 function menuItems(){ return ITEM_KEYS.filter(itemAvailable); }
+/** Owned machine but empty shelf — used to explain the gap to the player. */
+function itemOutOfStock(k){ return (game.equip[ITEMS[k].station]||0)>0 && (game.pantry[k]|0)<=0; }
 
-function rollOrder(maxItems){
+/** Price demand, bent by who's ordering and by any branding push. */
+function appetite(item, species){
+  let d = demandProb(item);
+  const t = TASTE[species];
+  if(t){
+    if(t.loves===item) d*=LOVE_MULT;
+    if(t.hates===item) d*=HATE_MULT;
+  }
+  // A partner nudges their item, but only gently — the deal is meant to pay off
+  // by bringing more animals through the door, not by rewriting what everyone orders.
+  const deal=activeDeal();
+  if(deal && deal.item===item) d *= 1 + 0.45*dealFit(deal).score;
+  return clamp(d, 0.02, TASTE_CAP);
+}
+
+function rollOrder(maxItems, species){
   const menu=menuItems();
   if(!menu.length) return [];
   const order=[];
-  for(const k of menu) if(Math.random()<demandProb(k)) order.push(k);
+  for(const k of menu) if(Math.random()<appetite(k,species)) order.push(k);
   if(!order.length){
-    const tot=menu.reduce((s,k)=>s+demandProb(k),0);
+    const tot=menu.reduce((s,k)=>s+appetite(k,species),0);
     let r=Math.random()*tot;
-    for(const k of menu){ r-=demandProb(k); if(r<=0){ order.push(k); break; } }
+    for(const k of menu){ r-=appetite(k,species); if(r<=0){ order.push(k); break; } }
     if(!order.length) order.push(menu[0]);
   }
   if(maxItems && order.length>maxItems){
@@ -783,6 +905,77 @@ function rollOrder(maxItems){
     order.length=maxItems;
   }
   return order;
+}
+
+/* ============================================================
+   SECTION 6b — BRANDING DEALS
+   A partnership is paid for once and runs for 30 days. How much it actually
+   brings in depends on three things the player controls, so a deal is only
+   worth the fee when it genuinely suits the restaurant.
+   ============================================================ */
+function activeDeal(){
+  if(!game.deal || game.day>game.deal.untilDay) return null;
+  return PARTNERS.find(p=>p.id===game.deal.id) || null;
+}
+
+/** Machines of the station that makes `item`. */
+const machinesFor = item => game.equip[ITEMS[item].station]|0;
+
+/**
+ * Score a partnership 0..1 on three fronts, each explained to the player:
+ *  kitchen — can you actually make what they'll push?
+ *  price   — does your price sit in the band their customers expect?
+ *  animals — can you feed the species they'll send you?
+ */
+function dealFit(p){
+  const parts=[];
+
+  // 1. kitchen: roughly one machine per four tables of extra push
+  const want = Math.max(1, Math.ceil(game.equip.table/4));
+  const have = machinesFor(p.item);
+  const kitchen = have===0 ? 0 : clamp(have/want, 0, 1);
+  parts.push({ key:"kitchen", score:kitchen,
+    label: have===0 ? "You can't make "+ITEMS[p.item].name+" at all"
+         : kitchen>=1 ? "Your kitchen can keep up with the "+ITEMS[p.item].name.toLowerCase()+" rush"
+                      : "You may struggle to make enough "+ITEMS[p.item].name.toLowerCase() });
+
+  // 2. price: are you in their band?
+  const c=ITEMS[p.item], mid=c.def, price=game.prices[p.item];
+  let price_s;
+  if(p.band==="low")  price_s = clamp((mid*1.15 - price)/(mid*0.55), 0, 1);
+  else                price_s = clamp((price - mid*0.85)/(mid*0.55), 0, 1);
+  parts.push({ key:"price", score:price_s,
+    label: price_s>=0.65 ? "Your "+ITEMS[p.item].name.toLowerCase()+" price suits them"
+         : "They want "+ITEMS[p.item].name.toLowerCase()+" priced "+(p.band==="low"?"lower":"higher")+
+           " (yours is "+money(price)+")" });
+
+  // 3. animals: can you serve what this species likes best?
+  const fav = TASTE[p.species].loves;
+  const favOK = machinesFor(fav)>0 ? clamp(machinesFor(fav)/want, 0.45, 1) : 0;
+  parts.push({ key:"animals", score:favOK,
+    label: machinesFor(fav)===0
+      ? SPECIES_NAME[p.species]+" love "+ITEMS[fav].name+" and you can't make it"
+      : "You can serve the "+ITEMS[fav].name+" that "+SPECIES_NAME[p.species]+" love" });
+
+  const score = parts.reduce((s,x)=>s+x.score,0)/parts.length;
+  return { score, parts,
+    verdict: score>=0.7 ? {txt:"Great fit!",  cls:"pop"}
+           : score>=0.4 ? {txt:"Okay fit",    cls:"fair"}
+                        : {txt:"Poor fit",    cls:"pricey"} };
+}
+const SPECIES_NAME = { cat:"cats", dog:"dogs", bunny:"bunnies", hamster:"hamsters" };
+
+/** A partnership costs more the bigger your restaurant is, so signing one stays
+ *  a real decision late on instead of becoming free money. */
+function dealFee(p){
+  return Math.round(p.fee * (0.5 + 0.25*game.equip.table) / 5) * 5;
+}
+
+/** Refill the shortlist of partners on offer, skipping the one you signed. */
+function rollOffers(){
+  const pool=PARTNERS.filter(p=>!game.deal || p.id!==game.deal.id).map(p=>p.id);
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  game.offers=pool.slice(0,DEAL_OFFERS);
 }
 
 /* ============================================================
@@ -798,6 +991,26 @@ function moveTo(o,tx,ty,step){
   return false;
 }
 function addFX(x,y,txt,color){ rt.fx.push({x,y,txt,color,t:1.4}); }
+
+/* ---------- pantry ----------
+   Ingredients leave the shelf when a machine starts cooking, and go straight
+   back if that food is never eaten, so the player only ever pays for what
+   actually sells. */
+function takeStock(item){
+  if((game.pantry[item]|0)<=0) return false;
+  game.pantry[item]--;
+  return true;
+}
+function returnStock(item){
+  game.pantry[item] = clamp((game.pantry[item]|0)+1, 0, PANTRY_MAX);
+}
+/** Put back everything still in the kitchen — called when the day closes. */
+function returnAllInFlight(){
+  rt.ready.forEach(r=>returnStock(r.item));
+  rt.stations.forEach(s=>{ if(s.ticket) returnStock(s.ticket.item); });
+  rt.player.carry.forEach(returnStock);
+  rt.waiters.forEach(w=>w.carry.forEach(returnStock));
+}
 
 /** every patron (seated animal or car at the window) that still wants `item` */
 function patronsNeeding(item){
@@ -818,7 +1031,9 @@ function needs(p,item){
   const has =p.got.filter(o=>o===item).length;
   return has<want;
 }
-function fullyServed(p){ return p.order.every(it=>!needs(p,it)); }
+// An empty order must never count as "served" — with nothing on the menu that
+// would mark every arrival as a happy customer who paid nothing.
+function fullyServed(p){ return p.order.length>0 && p.order.every(it=>!needs(p,it)); }
 
 function giveItem(p,item){
   p.got.push(item);
@@ -829,23 +1044,43 @@ function giveItem(p,item){
 const TOGO_PREMIUM = 1.25;   // drive-thru orders cost a little extra
 
 function payAndLeave(p, isCar){
-  let paid=0;
-  p.got.forEach(it=>{ paid+=game.prices[it]; game.stats.sold[it]++; rt.daySold[it]++; });
+  let paid=0, used=0;
+  p.got.forEach(it=>{
+    paid+=game.prices[it]; used+=unitCost(it);
+    game.stats.sold[it]++; rt.daySold[it]++;
+  });
   if(isCar) paid*=TOGO_PREMIUM;
+  // The ingredients were paid for at the Pantry; this is what they were worth,
+  // so the day summary can show takings minus food cost.
+  rt.dayIngredients += used;
   game.money+=paid; game.lifetime+=paid; rt.dayRevenue+=paid;
   if(isCar){ rt.dayCars++; game.stats.cars++; } else { rt.dayCustomers++; game.stats.customers++; }
   addFX(p.x, p.y-34, "+"+money(paid), "#3f9b70");
 }
 
 function freeTable(){ return layout.tables.find(t=>!t.taken); }
-function spawnInterval(){ return clamp(7.0/(0.75+game.equip.table*0.55), 0.85, 8); }
+function spawnInterval(){
+  // A well-matched partnership pulls extra animals through the door; a poorly
+  // matched one brings next to nobody, so the fee is simply wasted.
+  const deal=activeDeal();
+  const boost = deal ? 1 + 0.75*dealFit(deal).score : 1;
+  return clamp(7.0/((0.75+game.equip.table*0.55)*boost), 0.6, 8);
+}
+/** Deals skew who walks in, without ever shutting the other animals out. */
+function rollSpecies(){
+  const deal=activeDeal();
+  if(deal && Math.random() < 0.55*dealFit(deal).score) return deal.species;
+  return pick(SPECIES);
+}
 
 function spawnCustomer(){
   const t=freeTable(); if(!t) return;
-  const c={ id:uid(), species:pick(SPECIES), color:pick(FUR),
+  if(!menuItems().length) return;        // nothing to sell, so nobody comes in
+  const sp=rollSpecies();
+  const c={ id:uid(), species:sp, color:pick(FUR),
     x:layout.door.x+rand(-20,20), y:layout.worldH+30,
     tx:t.x, ty:t.y+t.r+18, tableIdx:layout.tables.indexOf(t),
-    state:"walkin", order:rollOrder(), got:[], patience:46, patienceMax:46,
+    state:"walkin", order:rollOrder(null,sp), got:[], patience:46, patienceMax:46,
     timer:0, bob:Math.random()*6, emote:0, dir:1, moving:true };
   t.taken=c.id;
   rt.customers.push(c);
@@ -863,7 +1098,12 @@ function cancelOrder(p){
       return false;
     });
   }
-  rt.stations.forEach(s=>{ if(s.ticket && s.ticket.patronId===p.id && !s.ticket.done){ s.ticket=null; s.progress=0; } });
+  rt.stations.forEach(s=>{
+    if(s.ticket && s.ticket.patronId===p.id && !s.ticket.done){
+      returnStock(s.ticket.item);          // never cooked, so the ingredients go back
+      s.ticket=null; s.progress=0;
+    }
+  });
 }
 
 /* ---------- cars ---------- */
@@ -871,21 +1111,22 @@ function carSlotFree(i){ return !rt.cars.some(c=>c.slot===i); }
 
 /** A car is a whole carload of hungry animals, so it orders a bit more than one
  *  diner would — otherwise a trip to the window is never worth a waiter's time. */
-function carOrder(){
+function carOrder(species){
   const menu=menuItems();
-  const order=rollOrder(3);
+  const order=rollOrder(3,species);
   while(order.length<3 && menu.length && Math.random()<0.55) order.push(pick(menu));
   return order;
 }
 function spawnCar(){
   if(!layout.drive) return;
+  if(!menuItems().length) return;        // nothing to sell at the window either
   let slot=-1;
   for(let i=0;i<layout.drive.slots.length;i++) if(carSlotFree(i)){ slot=i; break; }
   if(slot<0) return;
-  const s=layout.drive.slots[slot];
-  rt.cars.push({ id:uid(), isCar:true, slot, species:pick(SPECIES), color:pick(FUR), paint:pick(CAR_COLORS),
+  const s=layout.drive.slots[slot], sp=rollSpecies();
+  rt.cars.push({ id:uid(), isCar:true, slot, species:sp, color:pick(FUR), paint:pick(CAR_COLORS),
     x:s.x, y:layout.worldH+120, tx:s.x, ty:s.y,
-    state:"driving", order:carOrder(), got:[], patience:58, patienceMax:58,
+    state:"driving", order:carOrder(sp), got:[], patience:58, patienceMax:58,
     timer:0, emote:0, bob:0, queued:false });
 }
 
@@ -948,6 +1189,10 @@ function autoInteract(actor, opts){
       if(s.ticket || s.emp) continue;
       if(!rt.queues[s.type].length) continue;
       if(dist(actor.x,actor.y,s.x,s.y)<58){
+        const want=rt.queues[s.type][0].item;
+        if(!takeStock(want)){
+          actor.act=0.6; addFX(s.x, s.y-42, "out of "+ITEMS[want].name.toLowerCase()+"!", BLUSH_D); return;
+        }
         s.ticket=rt.queues[s.type].shift(); s.progress=0; s.byPlayer=true;
         actor.act=0.25; addFX(s.x, s.y-42, "cooking!", INK2); return;
       }
@@ -1042,7 +1287,14 @@ function updateDay(dt){
   }
   if(layout.drive){
     rt.carTimer-=dt;
-    if(rt.carTimer<=0){ rt.carTimer=rand(3.6,6.4); if(rt.t>14) spawnCar(); }
+    if(rt.carTimer<=0){
+      // The drive-thru lane is the one place extra traffic really lands: the
+      // dining room is limited by how fast tables turn over, not by arrivals.
+      const d=activeDeal();
+      const pull = d ? 1 + 0.75*dealFit(d).score : 1;
+      rt.carTimer=rand(3.6,6.4)/pull;
+      if(rt.t>14) spawnCar();
+    }
   }
 
   // --- seated customers ---
@@ -1115,7 +1367,9 @@ function updateDay(dt){
   rt.stations.forEach(s=>{
     s.bob+=dt*4;
     const q=rt.queues[s.type];
-    if(!s.ticket && s.emp && q.length){ s.ticket=q.shift(); s.progress=0; s.byPlayer=false; }
+    if(!s.ticket && s.emp && q.length && takeStock(q[0].item)){
+      s.ticket=q.shift(); s.progress=0; s.byPlayer=false;
+    }
     if(s.ticket){
       if(s.ticket.done){
         if(rt.ready.length < game.equip.checkout*4){
@@ -1136,6 +1390,7 @@ function updateDay(dt){
     if(r.age>22 && patronsNeeding(r.item).length<=countCarried(r.item)){
       const pos=readySlotPos(i);
       if(pos) addFX(pos.x,pos.y-10,"tidied up",INK2);
+      returnStock(r.item);                 // nobody ate it, so it isn't charged for
       rt.ready.splice(i,1);
     }
   }
@@ -1156,7 +1411,11 @@ function startDay(){
   rt.phase="playing";
   save();
 }
-function endDay(){ rt.phase="night"; rt.nightT=0; save(); }
+function endDay(){
+  returnAllInFlight();                 // uneaten food goes back on the shelf
+  rt.ready.length=0;
+  rt.phase="night"; rt.nightT=0; save();
+}
 
 function finishNight(){
   rt.phase="summary";
@@ -1164,6 +1423,8 @@ function finishNight(){
   if(game.day % AWARD_EVERY === 0 && game.employees.length) game.awardDue=true;
   document.getElementById("sumTitle").firstChild.nodeValue="Day "+game.day+" complete! ";
   document.getElementById("sRev").textContent  = money(rt.dayRevenue);
+  document.getElementById("sFood").textContent = "−"+money(rt.dayIngredients);
+  document.getElementById("sProfit").textContent = money(rt.dayRevenue-rt.dayIngredients);
   document.getElementById("sCust").textContent = rt.dayCustomers;
   document.getElementById("sCars").textContent = game.equip.drivethru ? rt.dayCars : "—";
   document.getElementById("sLost").textContent = rt.dayLost;
@@ -1171,7 +1432,7 @@ function finishNight(){
   document.getElementById("sDay").textContent  = game.day;
   document.getElementById("sBal").textContent  = money(game.money);
   const sold=document.getElementById("sSold"); sold.innerHTML="";
-  menuItems().forEach(k=>{
+  ITEM_KEYS.filter(itemOwned).forEach(k=>{
     const row=document.createElement("div"); row.className="sold-row";
     row.innerHTML=`<span class="ico">${itemSVG(k,32)}</span><span>${ITEMS[k].name}</span><span class="n">${rt.daySold[k]}</span>`;
     sold.appendChild(row);
@@ -1187,7 +1448,16 @@ function nextDay(){
   game.awardDue=false;
   startNextDay();
 }
-function startNextDay(){ game.day++; startDay(); save(); }
+function startNextDay(){
+  game.day++;
+  // a partnership that has run its course ends, and fresh partners come knocking
+  if(game.deal && game.day>game.deal.untilDay){
+    const was=PARTNERS.find(p=>p.id===game.deal.id);
+    game.deal=null; rollOffers();
+    if(was) showTip("Your deal with "+was.name+" has finished. New partners are available! 🤝");
+  }
+  startDay(); save();
+}
 
 /* ============================================================
    SECTION 9 — RENDERING
@@ -1301,6 +1571,23 @@ function drawFloor(){
   ctx.fillText("WELCOME",dx,wh-21);
 
   ctx.fillStyle=LAV; ctx.fillRect(10,layout.checkoutBottom+2,iw-20,5);
+
+  // branding poster on the wall while a partnership is running
+  const deal=activeDeal();
+  if(deal){
+    const px=34, py=layout.checkoutBottom+40;
+    ctx.save(); ctx.translate(px,py);
+    ctx.rotate(-0.04);
+    rr(-22,-26,116,52,9); fillStroke(CREAM,INK,3);
+    rr(-22,-26,116,15,7); fillStroke(SKY,INK,3);
+    ctx.fillStyle=INK; ctx.font="800 9px "+FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText("PROUD PARTNER",36,-18);
+    ctx.font="800 11px "+FONT;
+    const nm=deal.name.length>16 ? deal.name.slice(0,15)+"…" : deal.name;
+    ctx.fillText(nm,36,-2);
+    ctx.save(); ctx.translate(36,15); drawItem(deal.item,0,0,22); ctx.restore();
+    ctx.restore();
+  }
 
   // drive-thru hatch in the right wall
   if(layout.drive){
@@ -2035,7 +2322,7 @@ function buildPrices(){
   ITEM_KEYS.forEach(k=>{
     const cfg=ITEMS[k];
     const row=document.createElement("div"); row.className="price-row";
-    if(!itemAvailable(k)){
+    if(!itemOwned(k)){
       row.style.opacity=".72";
       row.innerHTML=`
         <div class="price-head"><span class="ico">${itemSVG(k,44)}</span>
@@ -2044,7 +2331,12 @@ function buildPrices(){
       box.appendChild(row);
       return;
     }
+    const emptyWarn = itemOutOfStock(k)
+      ? `<p class="muted" style="margin:0 0 8px;color:var(--blush-deep);font-weight:800;">
+           ⚠️ Out of ingredients — off the menu until you restock in the Pantry.</p>` : "";
+    if(emptyWarn) row.style.outline="3px dashed var(--blush-deep)";
     row.innerHTML=`
+      ${emptyWarn}
       <div class="price-head"><span class="ico">${itemSVG(k,44)}</span><span class="nm">${cfg.name}</span></div>
       <div class="stepper">
         <button class="round" data-dec aria-label="cheaper">−</button>
@@ -2056,6 +2348,7 @@ function buildPrices(){
         <div class="bar"><div class="fill" id="pf-${k}"></div></div>
         <span class="tag" id="pt-${k}"></span>
         <div class="muted" id="pd-${k}"></div>
+        <div class="muted" id="pp-${k}" style="margin-top:6px;"></div>
       </div>`;
     box.appendChild(row);
     const range=row.querySelector("#pr-"+k);
@@ -2079,6 +2372,12 @@ function refreshPriceRow(k){
     d>=0.70?"Lots of animals will order this!" :
     d>=0.35?"About half your customers will order this." :
             "Only a few animals will pay this much.";
+  // the lesson: what you charge, minus what it costs you, is what you keep
+  const profit=game.prices[k]-unitCost(k), pr=document.getElementById("pp-"+k);
+  if(pr){
+    pr.innerHTML = `<b>${money(game.prices[k])}</b> price − <b>${money(unitCost(k))}</b> ingredients
+       = <b style="color:${profit>0?'#3f9b70':'var(--blush-deep)'}">${money(profit)} profit</b> each`;
+  }
 }
 
 /* ---- shop ---- */
@@ -2110,6 +2409,40 @@ function buildShop(){
     btn.addEventListener("click",()=>buy(it.key));
     box.appendChild(el);
   });
+
+  // suppliers — permanently cheaper ingredients for one menu item
+  const owned=ITEM_KEYS.filter(itemOwned);
+  if(owned.length){
+    const h=document.createElement("h3"); h.textContent="Suppliers"; box.appendChild(h);
+    const p=document.createElement("p"); p.className="muted";
+    p.textContent="A better supplier makes one ingredient cheaper forever, so every single sale earns you more.";
+    box.appendChild(p);
+    owned.forEach(k=>{
+      const lvl=supplierLevel(k), next=SUPPLIERS[lvl+1];
+      const el=document.createElement("div"); el.className="shop-item";
+      el.innerHTML=`
+        <span class="ico">${itemSVG(k,52)}</span>
+        <span class="info">
+          <span class="t">${ITEMS[k].name} supplier<span class="owned">${SUPPLIERS[lvl].name}</span></span>
+          <span class="d">${next
+            ? "Now "+money(unitCost(k))+" each → "+money(ITEMS[k].cost*next.mult)+" each with "+next.name+"."
+            : "Best supplier in town — "+money(unitCost(k))+" each."}</span>
+        </span>
+        <button class="btn ${next&&game.money>=next.price?"mint":""} small">${next?money(next.price):"✓"}</button>`;
+      const b=el.querySelector("button");
+      b.disabled = !next || game.money<next.price;
+      b.addEventListener("click",()=>buySupplier(k));
+      box.appendChild(el);
+    });
+  }
+}
+function buySupplier(k){
+  const lvl=supplierLevel(k), next=SUPPLIERS[lvl+1];
+  if(!next || game.money<next.price) return;
+  game.money-=next.price;
+  game.suppliers[k]=lvl+1;
+  buildShop(); updateHUD(); save();
+  showTip(ITEMS[k].name+" ingredients now cost "+money(unitCost(k))+" each! 🎉");
 }
 function buy(key){
   const cost=EQUIP_PRICES[key], item=SHOP_ITEMS.find(s=>s.key===key);
@@ -2298,6 +2631,135 @@ function hire(){
 }
 function escapeHTML(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+/* ---- pantry ---- */
+function buyStock(k, packs){
+  const cost = packCost(k)*packs;
+  const room = PANTRY_MAX-(game.pantry[k]|0);
+  if(room<=0 || game.money<cost) return;
+  game.pantry[k] = clamp((game.pantry[k]|0)+PACK*packs, 0, PANTRY_MAX);
+  game.money -= cost;
+  buildPantry(); updateHUD(); save();
+}
+function fillAll(){
+  let spent=0;
+  ITEM_KEYS.filter(itemOwned).forEach(k=>{
+    while((game.pantry[k]|0)+PACK<=PANTRY_MAX && game.money>=packCost(k)){
+      game.money-=packCost(k); spent+=packCost(k);
+      game.pantry[k]=(game.pantry[k]|0)+PACK;
+    }
+  });
+  buildPantry(); updateHUD(); save();
+  showTip(spent>0 ? "Shelves restocked for "+money(spent) : "Nothing to restock right now");
+}
+const itemOwned = k => (game.equip[ITEMS[k].station]|0)>0;
+
+function buildPantry(){
+  document.getElementById("pantryMoney").textContent=money(game.money);
+  const box=document.getElementById("pantryList"); box.innerHTML="";
+  const owned=ITEM_KEYS.filter(itemOwned);
+  if(!owned.length){ box.innerHTML='<p class="muted">No machines yet!</p>'; return; }
+  owned.forEach(k=>{
+    const have=game.pantry[k]|0, pc=packCost(k);
+    const pct=Math.round(have/PANTRY_MAX*100);
+    const low=have<=0 ? "pricey" : have<10 ? "fair" : "pop";
+    const row=document.createElement("div"); row.className="price-row";
+    row.innerHTML=`
+      <div class="price-head">
+        <span class="ico">${itemSVG(k,44)}</span>
+        <span class="nm">${ITEMS[k].name}<br><span class="muted" style="font-size:12px;">${ITEMS[k].supply} · ${money(unitCost(k))} each</span></span>
+        <span class="tag ${low}">${have===0?"Empty!":have+" left"}</span>
+      </div>
+      <div class="demand"><div class="bar"><div class="fill" style="width:${pct}%;background:${have===0?'var(--blush-deep)':'var(--mint-deep)'}"></div></div></div>
+      <div class="stepper" style="margin-top:10px;">
+        <button class="btn small" data-b1 ${game.money<pc||have>=PANTRY_MAX?"disabled":""}>+${PACK} · ${money(pc)}</button>
+        <button class="btn small" data-b5 ${game.money<pc*5||have+PACK*5>PANTRY_MAX?"disabled":""}>+${PACK*5} · ${money(pc*5)}</button>
+      </div>`;
+    row.querySelector("[data-b1]").addEventListener("click",()=>buyStock(k,1));
+    row.querySelector("[data-b5]").addEventListener("click",()=>buyStock(k,5));
+    box.appendChild(row);
+  });
+}
+
+/** Never let a player be stranded with no food and no money to buy any. */
+function emergencyStock(){
+  if(rt && rt.phase!=="playing") return;
+  const owned=ITEM_KEYS.filter(itemOwned);
+  if(!owned.length) return;
+  const anyFood = owned.some(k=>(game.pantry[k]|0)>0);
+  const canBuy  = owned.some(k=>game.money>=packCost(k));
+  if(anyFood || canBuy) return;
+  const k=owned.reduce((a,b)=>unitCost(a)<=unitCost(b)?a:b);
+  game.pantry[k]=EMERGENCY_PACK;
+  showTip("A kind supplier dropped off some "+ITEMS[k].name.toLowerCase()+" supplies! 🎁");
+  save();
+}
+
+/* ---- branding deals ---- */
+function fitMeter(fit){
+  return `<div class="demand" style="margin-top:8px;">
+      <div class="bar"><div class="fill" style="width:${Math.round(fit.score*100)}%;background:${
+        fit.score>=0.7?'var(--mint-deep)':fit.score>=0.4?'var(--butter-deep)':'var(--blush-deep)'}"></div></div>
+      <span class="tag ${fit.verdict.cls}">${fit.verdict.txt}</span>
+    </div>
+    <ul style="margin:8px 0 0;padding-left:20px;" class="muted">
+      ${fit.parts.map(p=>`<li>${p.score>=0.65?"✅":p.score>=0.35?"🟡":"❌"} ${escapeHTML(p.label)}</li>`).join("")}
+    </ul>`;
+}
+function buildDeals(){
+  document.getElementById("dealMoney").textContent=money(game.money);
+  const act=document.getElementById("dealActive"); act.innerHTML="";
+  const cur=activeDeal();
+  if(cur){
+    const fit=dealFit(cur);
+    act.innerHTML=`<h3>Current partner</h3>
+      <div class="price-row" style="background:var(--butter);">
+        <div class="price-head"><span class="nm">🤝 ${escapeHTML(cur.name)}</span>
+          <span class="tag ${fit.verdict.cls}">${fit.verdict.txt}</span></div>
+        <div class="muted">Brings more ${SPECIES_NAME[cur.species]} and pushes ${ITEMS[cur.item].name}.
+          Runs until day ${game.deal.untilDay} (${Math.max(0,game.deal.untilDay-game.day)} days left).</div>
+        ${fitMeter(fit)}
+      </div>`;
+  }
+  document.getElementById("dealOffersTitle").textContent =
+    cur ? "Other partners (you can only have one at a time)" : "Partners who want to work with you";
+
+  if(!game.offers || !game.offers.length) rollOffers();
+  const box=document.getElementById("dealList"); box.innerHTML="";
+  game.offers.forEach(id=>{
+    const p=PARTNERS.find(x=>x.id===id); if(!p) return;
+    const fit=dealFit(p), fee=dealFee(p), afford=game.money>=fee, busy=!!cur;
+    const el=document.createElement("div"); el.className="price-row";
+    el.innerHTML=`
+      <div class="price-head">
+        <span class="ico">${itemSVG(p.item,44)}</span>
+        <span class="nm">${escapeHTML(p.name)}<br>
+          <span class="muted" style="font-size:12px;">${escapeHTML(p.blurb)}</span></span>
+      </div>
+      <div class="muted">Brings more <b>${SPECIES_NAME[p.species]}</b>, pushes <b>${ITEMS[p.item].name}</b>,
+        and wants it priced <b>${p.band==="low"?"low":"high"}</b>.</div>
+      ${fitMeter(fit)}
+      <button class="btn ${afford&&!busy?'mint':''} small" style="width:100%;margin-top:10px;" ${(!afford||busy)?"disabled":""}>
+        ${busy?"Already partnered":afford?"Sign for "+money(fee)+" · 30 days":"Costs "+money(fee)}
+      </button>`;
+    el.querySelector("button").addEventListener("click",()=>signDeal(p.id));
+    box.appendChild(el);
+  });
+}
+function signDeal(id){
+  const p=PARTNERS.find(x=>x.id===id);
+  if(!p || activeDeal()) return;
+  const fee=dealFee(p);
+  if(game.money<fee) return;
+  game.money-=fee;
+  game.deal={ id:p.id, untilDay:game.day+DEAL_RUN };
+  rollOffers();
+  buildDeals(); updateHUD(); save();
+  const fit=dealFit(p);
+  showTip(fit.score>=0.7 ? "🤝 "+p.name+" signed — a great match!"
+        : fit.score>=0.4 ? "🤝 "+p.name+" signed."
+        : "🤝 "+p.name+" signed — but it may not suit you…");
+}
+
 /* ---- settings ---- */
 function setHours(oh,ch){
   oh=clamp(Math.round(oh),OPEN_MIN,OPEN_MAX);
@@ -2346,6 +2808,9 @@ document.getElementById("closeUp").addEventListener("click",  ()=>setHours(openH
 /* ---- buttons ---- */
 document.getElementById("btnPrices").addEventListener("click",()=>{ buildPrices(); openModal("ovPrices"); });
 document.getElementById("btnShop").addEventListener("click",  ()=>{ buildShop();   openModal("ovShop"); });
+document.getElementById("btnPantry").addEventListener("click",()=>{ buildPantry(); openModal("ovPantry"); });
+document.getElementById("btnDeals").addEventListener("click", ()=>{ buildDeals();  openModal("ovDeals"); });
+document.getElementById("btnFillAll").addEventListener("click", fillAll);
 document.getElementById("btnStaff").addEventListener("click", ()=>{ buildStaff();  openModal("ovStaff"); });
 document.getElementById("btnInfo").addEventListener("click",  ()=> openModal("ovInfo"));
 document.getElementById("btnSettings").addEventListener("click",()=>{ buildSettings(); openModal("ovSettings"); });
@@ -2556,7 +3021,7 @@ window.addEventListener("keydown",unlockMusic,{once:true});
 /* ============================================================
    SECTION 13 — MAIN LOOP
    ============================================================ */
-let last=performance.now(), hudAcc=0, saveAcc=0;
+let last=performance.now(), hudAcc=0, saveAcc=0, stockAcc=0;
 function frame(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now;
   if(rt){
@@ -2564,6 +3029,7 @@ function frame(now){
     Music.setMood(rt.phase==="playing" ? "day" : "night");
     if(rt.phase==="playing"){
       updateDay(dt);
+      stockAcc+=dt; if(stockAcc>3){ stockAcc=0; emergencyStock(); }
       saveAcc+=dt; if(saveAcc>15){ saveAcc=0; save(); }
     } else if(rt.phase==="night"){
       rt.nightT+=dt;

@@ -1,4 +1,6 @@
-const CACHE_NAME = 'animal-grill-v1';
+// Bump this on every release. The fetch handler is cache-first, so a returning
+// player keeps getting the old index.html until this name changes.
+const CACHE_NAME = 'animal-grill-v2';
 const ASSETS = [
   './index.html',
   './manifest.json',
